@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class FileWriterUtil {
 
-    public void writeStocksToFile(Set<Stock> stockSet, String filePath) {
+    public static void writeStocksToFile(Set<Stock> stockSet, String filePath) {
         // Ensure the directory exists before writing the file
         File file = new File(filePath);
         file.getParentFile().mkdirs(); // Create directories if they don't exist
