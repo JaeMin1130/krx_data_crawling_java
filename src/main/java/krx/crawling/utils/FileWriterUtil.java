@@ -1,10 +1,12 @@
-package krx.crawling;
+package krx.crawling.utils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
+
+import krx.crawling.entity.Stock;
 
 public class FileWriterUtil {
 
