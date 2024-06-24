@@ -1,4 +1,4 @@
-package krx.crawling;
+package krx.crawling.utils;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -15,8 +15,9 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import krx.crawling.entity.Stock;
+
 public final class KrxCrawler {
-    // private final KrxCrawler crawler = new KrxCrawler();
     private static WebDriver driver;
     private static JavascriptExecutor js;
 
@@ -24,7 +25,7 @@ public final class KrxCrawler {
         throw new AssertionError();
     }
 
-    static Set<Stock> execute() throws InterruptedException {
+    public static Set<Stock> execute() throws InterruptedException {
         startChromeDriver();
 
         List<ArrayList<String>> baseDataList = crawlContents(
@@ -51,7 +52,7 @@ public final class KrxCrawler {
             financeDataIter.next(); // 중복되는 close 데이터 스킵
 
             Stock stock = Stock.builder()
-                    .id(i)
+                    // .id(i)
                     .company(companyName)
                     .marketCategory(baseDataIter.next())
                     .sector(baseDataIter.next())
@@ -115,7 +116,7 @@ public final class KrxCrawler {
 
             rowCount += dataElementList.size();
 
-            System.out.println(rowCount);
+            System.out.println("total number of rows : " + rowCount);
             System.out.printf("%.2f%% done\n", (double) rowCount / 2800 * 100);
         }
 
@@ -139,18 +140,16 @@ public final class KrxCrawler {
         int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
 
         while (firstKey != rowCount && tryCount < 30) {
-            System.out.println("scrolling...");
+            System.out.println("scrolling... tryCount :" + ++tryCount);
             js.executeScript(
                     firstKey > rowCount ? "arguments[0].scrollBy(0, -2);" : "arguments[0].scrollBy(0, 50);",
                     dataArea);
 
-            Thread.sleep(100);
+            Thread.sleep(50);
 
             firstElement = driver.findElement(
                     By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
             firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
-
-            System.out.println("tryCount : " + ++tryCount);
         }
 
         return tryCount < 30 ? true : false;

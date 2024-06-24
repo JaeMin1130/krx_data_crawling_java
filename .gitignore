@@ -66,9 +66,12 @@ buildNumber.properties
 .ionide
 
 ### etc
-.txt
 .env
+*.txt
+*.properties
 /src/main/resources/application-prod.yml
 /src/test/resources/application.yml
 
+# Ignore JDBC properties file
+jdbc.properties
 # End of https://www.toptal.com/developers/gitignore/api/maven,java,visualstudiocode
