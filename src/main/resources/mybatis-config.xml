@@ -18,7 +18,7 @@
         </environment>
     </environments>
     <mappers>
-        <mapper class="mybatis.test.UserMapper"/>
+        <!-- <mapper class="mybatis.test.UserMapper"/> -->
         <mapper class="krx.crawling.mapper.StockMapper"/>
     </mappers>
 </configuration>

@@ -52,7 +52,7 @@ public final class KrxCrawler {
             financeDataIter.next(); // 중복되는 close 데이터 스킵
 
             Stock stock = Stock.builder()
-                    .id(i)
+                    // .id(i)
                     .company(companyName)
                     .marketCategory(baseDataIter.next())
                     .sector(baseDataIter.next())
