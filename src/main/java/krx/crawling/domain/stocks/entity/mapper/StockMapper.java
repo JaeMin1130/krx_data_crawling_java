@@ -1,4 +1,4 @@
-package krx.crawling.mapper;
+package krx.crawling.domain.stocks.entity.mapper;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import krx.crawling.entity.Stock;
+import krx.crawling.domain.stocks.entity.Stock;
 
 public interface StockMapper {
 

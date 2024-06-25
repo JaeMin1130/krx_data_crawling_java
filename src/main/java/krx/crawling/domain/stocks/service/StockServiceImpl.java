@@ -1,4 +1,4 @@
-package krx.crawling.service;
+package krx.crawling.domain.stocks.service;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -9,15 +9,14 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
-import krx.crawling.entity.Stock;
-import krx.crawling.mapper.StockMapper;
-import krx.crawling.repository.StockRepository;
+import krx.crawling.domain.stocks.entity.Stock;
+import krx.crawling.domain.stocks.entity.mapper.StockMapper;
 
-public class StockDBService implements StockRepository {
+public class StockServiceImpl implements StockService {
 
     private SqlSessionFactory sqlSessionFactory;
 
-    public StockDBService() throws IOException {
+    public StockServiceImpl() throws IOException {
         try (Reader reader = Resources.getResourceAsReader("mybatis-config.xml")) {
             this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
         }
@@ -38,5 +37,25 @@ public class StockDBService implements StockRepository {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public Stock getStockById(int id) {
+        Stock stock = null;
+        try (SqlSession session = sqlSessionFactory.openSession()) {
+            StockMapper mapper = session.getMapper(StockMapper.class);
+
+            stock = mapper.getStockById(id);
+
+            session.commit();
+            session.close();
+
+            return stock;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return stock;
     }
 }

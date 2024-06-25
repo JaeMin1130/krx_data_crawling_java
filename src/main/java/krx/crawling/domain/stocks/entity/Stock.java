@@ -1,4 +1,4 @@
-package krx.crawling.entity;
+package krx.crawling.domain.stocks.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

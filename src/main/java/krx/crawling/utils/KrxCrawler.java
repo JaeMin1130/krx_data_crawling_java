@@ -15,7 +15,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import krx.crawling.entity.Stock;
+import krx.crawling.domain.stocks.entity.Stock;
 
 public final class KrxCrawler {
     private static WebDriver driver;

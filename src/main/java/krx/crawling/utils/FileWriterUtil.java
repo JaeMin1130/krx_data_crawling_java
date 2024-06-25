@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 
-import krx.crawling.entity.Stock;
+import krx.crawling.domain.stocks.entity.Stock;
 
 public class FileWriterUtil {
 
