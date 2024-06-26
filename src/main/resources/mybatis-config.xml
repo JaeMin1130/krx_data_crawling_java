@@ -5,7 +5,7 @@
 <configuration>
 
     <!-- jdbc.properties 파일 등록 -->
-    <properties resource="jdbc.properties"/>
+    <properties resource="application.properties"/>
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC"/>
@@ -19,6 +19,6 @@
     </environments>
     <mappers>
         <!-- <mapper class="mybatis.test.UserMapper"/> -->
-        <mapper class="krx.crawling.mapper.StockMapper"/>
+        <mapper class="krx.crawling.domain.stocks.entity.mapper.StockMapper"/>
     </mappers>
 </configuration>
