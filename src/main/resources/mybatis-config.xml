@@ -5,7 +5,7 @@
 <configuration>
 
     <!-- jdbc.properties 파일 등록 -->
-    <properties resource="jdbc.properties"/>
+    <properties resource="application.properties"/>
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC"/>
