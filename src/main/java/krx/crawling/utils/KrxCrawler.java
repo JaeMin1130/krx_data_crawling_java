@@ -139,7 +139,7 @@ public final class KrxCrawler {
                 By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
         int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
 
-        while (firstKey != rowCount && tryCount < 30) {
+        while (firstKey != rowCount && tryCount < 1) {
             System.out.println("scrolling... tryCount :" + ++tryCount);
             js.executeScript(
                     firstKey > rowCount ? "arguments[0].scrollBy(0, -2);" : "arguments[0].scrollBy(0, 50);",
@@ -152,7 +152,7 @@ public final class KrxCrawler {
             firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
         }
 
-        return tryCount < 30 ? true : false;
+        return tryCount < 1 ? true : false;
     }
 
 }

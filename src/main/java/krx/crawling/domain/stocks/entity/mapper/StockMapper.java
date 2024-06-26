@@ -24,7 +24,7 @@ public interface StockMapper {
     List<Stock> getAllStocks();
 
     @Update("UPDATE stock SET company = #{company}, marketCategory = #{marketCategory}, sector = #{sector}, close = #{close}, volume = #{volume}, " +
-            "tradingValue = #{tradingValue}, marketCap = #{marketCap}, eps = #{eps}, pbr = #{pbr}, per = #{per}, bps = #{bps}, dps = #{dps}, dy = #{dy} " +
+            "tradingValue = #{tradingValue}, marketCap = #{marketCap}, eps = #{eps}, pbr = #{pbr}, per = #{per}, bps = #{bps}, dps = #{dps}, dy = #{dy}, date = #{date} " +
             "WHERE id = #{id}")
     void updateStock(Stock stock);
 
