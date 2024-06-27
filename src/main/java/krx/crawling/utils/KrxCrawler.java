@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
+import static java.time.LocalDateTime.now;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -66,6 +66,7 @@ public final class KrxCrawler {
                     .pbr(isEqual ? financeDataIter.next() : null)
                     .dps(isEqual ? financeDataIter.next() : null)
                     .dy(isEqual ? financeDataIter.next() : null)
+                    .date(now())
                     .build();
 
             stockSet.add(stock);
@@ -97,7 +98,7 @@ public final class KrxCrawler {
 
         int rowCount = 0;
         List<ArrayList<String>> result = new ArrayList<>();
-        while (scroll(rowCount, dataArea)) {
+        while (scroll(rowCount, dataArea, 30)) {
             companyList = nameArea.findElements(By.cssSelector(".tui-grid-cell"));
             dataElementList = dataArea.findElements(By.cssSelector(".tui-grid-row-odd, .tui-grid-row-even"));
 
@@ -133,26 +134,26 @@ public final class KrxCrawler {
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
     }
 
-    private static boolean scroll(int rowCount, WebElement dataArea) throws InterruptedException {
+    private static boolean scroll(int rowCount, WebElement dataArea, int maxTryCount) throws InterruptedException {
         int tryCount = 0;
         WebElement firstElement = driver.findElement(
                 By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
         int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
 
-        while (firstKey != rowCount && tryCount < 1) {
+        while (firstKey != rowCount && tryCount < maxTryCount) {
             System.out.println("scrolling... tryCount :" + ++tryCount);
             js.executeScript(
                     firstKey > rowCount ? "arguments[0].scrollBy(0, -2);" : "arguments[0].scrollBy(0, 50);",
                     dataArea);
 
-            Thread.sleep(50);
+            Thread.sleep(20);
 
             firstElement = driver.findElement(
                     By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
             firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
         }
 
-        return tryCount < 1 ? true : false;
+        return tryCount < maxTryCount ? true : false;
     }
 
 }

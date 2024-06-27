@@ -69,6 +69,7 @@ buildNumber.properties
 .env
 *.txt
 *.properties
+persistence.xml
 /src/main/resources/application-prod.yml
 /src/test/resources/application.yml
 
