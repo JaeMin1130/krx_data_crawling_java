@@ -1,15 +1,14 @@
-package krx.crawling.domain.stocks.service;
+package krx.crawling.stocks.repository;
 
 import java.util.Set;
 
-import krx.crawling.domain.stocks.entity.Stock;
+import krx.crawling.stocks.entity.Stock;
 import krx.crawling.utils.JPAUtil;
 
-public class StockServiceImpl implements StockService {
-
+public class StockRepositoryImpl implements StockRepository {
     @Override
     public void insertCrawledStocks(Set<Stock> stockSet) {
-        for(Stock stock : stockSet){
+        for (Stock stock : stockSet) {
             JPAUtil.inTransaction(entityManager -> {
                 entityManager.persist(stock);
             });

@@ -1,6 +1,8 @@
-package krx.crawling.domain.stocks.entity;
+package krx.crawling.stocks.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import javax.annotation.Nonnull;
 
@@ -24,7 +26,7 @@ import lombok.ToString;
 @Table(name = "stock")  // Ensure this matches your actual table name
 public class Stock implements Comparable<Stock> {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Use the appropriate generation strategy
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     
     private String company;
@@ -35,13 +37,13 @@ public class Stock implements Comparable<Stock> {
     private String tradingValue;
     private String marketCap;
     private String eps;
-    private String pbr;
     private String per;
     private String bps;
+    private String pbr;
     private String dps;
     private String dy;
     @Nonnull
-    private LocalDateTime date;
+    private LocalDate date;
 
     @Override
     public int compareTo(Stock o) {
