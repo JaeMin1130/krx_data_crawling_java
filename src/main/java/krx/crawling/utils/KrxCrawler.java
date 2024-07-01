@@ -96,6 +96,8 @@ public final class KrxCrawler {
             stockSet.add(stock);
         }
 
+        driver.quit();
+        
         System.out.println("Total number of stocks unequal is " + unequalCount);
         return stockSet;
     }
@@ -105,7 +107,7 @@ public final class KrxCrawler {
         openBrowser(url);
 
         boolean isPossible = setDate(date);
-        if (!isPossible) throw new IllegalArgumentException("주말 또는 휴장일, " + date);
+        if (!isPossible) throw new IllegalArgumentException("주말 또는 휴장일(" + date + ")");
         System.out.println("Finish setting date. Selected date is " + date);
         
         List<WebElement> bodyArea = driver.findElements(By.cssSelector(".tui-grid-body-area"));
