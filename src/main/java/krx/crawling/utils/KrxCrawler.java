@@ -15,8 +15,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import krx.crawling.stocks.dto.BaseStockDto;
@@ -25,13 +23,13 @@ import krx.crawling.stocks.dto.StockDtoBuilder;
 import krx.crawling.stocks.entity.Stock;
 
 public final class KrxCrawler {
-    private static WebDriver driver;
-    private static JavascriptExecutor js;
+    private final WebDriver driver;
 
-    private KrxCrawler() { throw new AssertionError(); }
+    public KrxCrawler(WebDriver driver){
+        this.driver = driver;
+    }
 
-    public static Set<Stock> execute(LocalDate date) throws InterruptedException {
-
+    public Set<Stock> execute(LocalDate date) throws InterruptedException {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         List<BaseStockDto> baseDtoList = crawlBaseStock(strDate);
@@ -70,21 +68,17 @@ public final class KrxCrawler {
 
             stockSet.add(stock);
 
-            if (isEqual && financeIter.hasNext()) financeDto = financeIter.next();
+            if (isEqual && financeIter.hasNext())
+                financeDto = financeIter.next();
         }
 
         return stockSet;
     }
 
-    private static <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
+    private <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
             throws InterruptedException {
 
-        if (!isValidDate(date)) {
-            driver.quit();
-            throw new IllegalArgumentException("Invalid date format: " + date);
-        }
-
-        startChromeDriver();
+        if (!isValidDate(date)) throw new IllegalArgumentException("Invalid date format: " + date);
 
         List<T> result = new ArrayList<>();
         System.out.println("Open a window for crawling. url : " + url);
@@ -93,15 +87,14 @@ public final class KrxCrawler {
 
         boolean isPossible = setDate(date);
         if (!isPossible) {
-            driver.quit();
             throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
         }
         System.out.println("Finish setting date. Selected date is " + date);
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         System.out.println("Wait until contents are loaded.");
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
-        
+
         System.out.println("Start to crawl contents.");
         WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
 
@@ -110,7 +103,8 @@ public final class KrxCrawler {
         while (true) {
             isScrollable = scroll(rowKey, scrollArea);
 
-            List<WebElement> stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
+            List<WebElement> stockElements = driver
+                    .findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
             while (stockElements.size() != 0) {
                 System.out.println(rowKey + ": " + stockElements.get(0).getText());
 
@@ -124,15 +118,13 @@ public final class KrxCrawler {
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
 
-            if (!isScrollable) break;
+            if (isScrollable) break;
         }
-
-        driver.quit();
 
         return result;
     }
 
-    private static List<BaseStockDto> crawlBaseStock(String date) throws InterruptedException {
+    private List<BaseStockDto> crawlBaseStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF001.cmd",
                 values -> BaseStockDto.builder()
@@ -149,7 +141,7 @@ public final class KrxCrawler {
                 9);
     }
 
-    private static List<FinanceStockDto> crawlFinanceStock(String date) throws InterruptedException {
+    private List<FinanceStockDto> crawlFinanceStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF002.cmd",
                 values -> FinanceStockDto.builder()
@@ -167,8 +159,9 @@ public final class KrxCrawler {
                 10);
     }
 
-    private static boolean scroll(int rowKey, WebElement dataArea) throws InterruptedException {
+    private boolean scroll(int rowKey, WebElement dataArea) throws InterruptedException {
         int tryCount = 0;
+        JavascriptExecutor js = (JavascriptExecutor) driver;
         WebElement firstElement = driver.findElement(
                 By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
         int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
@@ -189,18 +182,7 @@ public final class KrxCrawler {
         return tryCount < 20;
     }
 
-    private static void startChromeDriver() {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless"); // Run Chrome in headless mode(no UI)
-        options.addArguments("--no-sandbox"); // Bypass OS security model
-
-        driver = new ChromeDriver(options);
-        js = (JavascriptExecutor) driver;
-
-        System.out.println("Chrome driver is up and running.");
-    }
-
-    private static boolean setDate(String date) {
+    private boolean setDate(String date) {
         driver.findElement(By.className("CI-CAL-OPEN-BTN")).click();
         WebElement calendar = driver.findElement(By.className("calendar"));
 
@@ -235,7 +217,7 @@ public final class KrxCrawler {
         return false;
     }
 
-    private static WebElement setYearMonth(WebElement calendar, int desiredVal, int selectedVal, String target) {
+    private WebElement setYearMonth(WebElement calendar, int desiredVal, int selectedVal, String target) {
         while (desiredVal != selectedVal) {
             calendar.findElement(By.className(desiredVal > selectedVal ? "next" + target : "prev" + target)).click();
             calendar = driver.findElement(By.className("calendar"));
@@ -244,7 +226,7 @@ public final class KrxCrawler {
         return calendar;
     }
 
-    private static boolean isValidDate(String date) {
+    private boolean isValidDate(String date) {
         try {
             LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             return true;
