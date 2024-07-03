@@ -5,9 +5,6 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
-import org.checkerframework.common.aliasing.qual.Unique;
-
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,16 +23,16 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "stock", uniqueConstraints = @UniqueConstraint(columnNames = { "company", "date" }))
+@Table(name = "stock", uniqueConstraints = @UniqueConstraint(columnNames = { "companyName", "date" }))
 public class Stock implements Comparable<Stock> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String company;
+    private String companyName;
     private String marketCategory;
     private String sector;
     private String close;
-    private String volume;
+    private String tradingVolume;
     private String tradingValue;
     private String marketCap;
     private String eps;
@@ -49,7 +46,7 @@ public class Stock implements Comparable<Stock> {
     
     @Override
     public int compareTo(Stock o) {
-        return String.CASE_INSENSITIVE_ORDER.compare(this.company, o.company);
+        return String.CASE_INSENSITIVE_ORDER.compare(this.companyName, o.companyName);
     }
 
     @Override
@@ -61,11 +58,11 @@ public class Stock implements Comparable<Stock> {
 
         Stock stock = (Stock) o;
         return id == stock.id &&
-                Objects.equals(company, stock.company) &&
+                Objects.equals(companyName, stock.companyName) &&
                 Objects.equals(marketCategory, stock.marketCategory) &&
                 Objects.equals(sector, stock.sector) &&
                 Objects.equals(close, stock.close) &&
-                Objects.equals(volume, stock.volume) &&
+                Objects.equals(tradingVolume, stock.tradingVolume) &&
                 Objects.equals(tradingValue, stock.tradingValue) &&
                 Objects.equals(marketCap, stock.marketCap) &&
                 Objects.equals(eps, stock.eps) &&
@@ -79,7 +76,7 @@ public class Stock implements Comparable<Stock> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, company, marketCategory, sector, close, volume, tradingValue, marketCap, eps, per, bps,
+        return Objects.hash(id, companyName, marketCategory, sector, close, tradingVolume, tradingValue, marketCap, eps, per, bps,
                 pbr, dps, dy, date);
     }
 }
