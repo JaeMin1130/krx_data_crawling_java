@@ -1,13 +1,10 @@
 package krx.crawling.utils;
 
-import static java.time.LocalDateTime.now;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -22,127 +19,174 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import krx.crawling.stocks.dto.BaseStockDto;
+import krx.crawling.stocks.dto.FinanceStockDto;
+import krx.crawling.stocks.dto.StockDtoBuilder;
 import krx.crawling.stocks.entity.Stock;
 
 public final class KrxCrawler {
     private static WebDriver driver;
     private static JavascriptExecutor js;
 
-    private KrxCrawler() {
-        throw new AssertionError();
-    }
+    private KrxCrawler() { throw new AssertionError(); }
 
-    private static boolean isValidDate(String date) {
-        try {
-            LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            return true;
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-    }
+    public static Set<Stock> execute(LocalDate date) throws InterruptedException {
 
-    public static Set<Stock> execute(String date) throws InterruptedException {
-        startChromeDriver();
+        String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        if (!isValidDate(date)) throw new IllegalArgumentException("Invalid date format: " + date);
-
-        List<ArrayList<String>> baseDataList = crawlContents(
-                "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF001.cmd", date);
+        List<BaseStockDto> baseDtoList = crawlBaseStock(strDate);
         System.out.println("--------------Finish base data crawling--------------");
 
-        List<ArrayList<String>> financeDataList = crawlContents(
-                "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF002.cmd", date);
+        List<FinanceStockDto> financeDataList = crawlFinanceStock(strDate);
         System.out.println("--------------Finish finance data crawling--------------");
 
+        System.out.println("base: " + baseDtoList.size());
+        System.out.println("finance: " + financeDataList.size());
+
         Set<Stock> stockSet = new TreeSet<>();
-        int financeIdx = 0;
-        int unequalCount = 0;
-        for (int i = 0; i < baseDataList.size(); i++) {
-            Iterator<String> baseDataIter = baseDataList.get(i).iterator();
-            Iterator<String> financeDataIter = financeDataList.get(financeIdx++).iterator();
 
-            boolean isEqual = true;
-            String companyNameBase = baseDataIter.next();
-            String companyNameFinance = financeDataIter.next();
-            if (companyNameFinance.contains("락"))
-                continue;
-
-            if (!companyNameFinance.equals(companyNameBase)) {
-                isEqual = false;
-                financeIdx--;
-                unequalCount++;
-            }
-
-            financeDataIter.next(); // 중복되는 close 데이터 스킵
+        Iterator<FinanceStockDto> financeIter = financeDataList.iterator();
+        FinanceStockDto financeDto = financeIter.next();
+        boolean isEqual;
+        for (BaseStockDto baseDto : baseDtoList) {
+            isEqual = baseDto.getCompanyName().equals(financeDto.getCompanyName());
 
             Stock stock = Stock.builder()
-                    // .id(i)
-                    .company(companyNameBase)
-                    .marketCategory(baseDataIter.next())
-                    .sector(baseDataIter.next())
-                    .close(baseDataIter.next())
-                    .volume(baseDataIter.next())
-                    .tradingValue(baseDataIter.next())
-                    .marketCap(baseDataIter.next())
-                    .eps(isEqual ? financeDataIter.next() : null)
-                    .per(isEqual ? financeDataIter.next() : null)
-                    .bps(isEqual ? financeDataIter.next() : null)
-                    .pbr(isEqual ? financeDataIter.next() : null)
-                    .dps(isEqual ? financeDataIter.next() : null)
-                    .dy(isEqual ? financeDataIter.next() : null)
-                    .date(LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    .companyName(baseDto.getCompanyName())
+                    .marketCategory(baseDto.getMarketCategory())
+                    .sector(baseDto.getSector())
+                    .close(baseDto.getClose())
+                    .tradingVolume(baseDto.getTradingVolume())
+                    .tradingValue(baseDto.getTradingValue())
+                    .marketCap(baseDto.getMarketCap())
+                    .eps(isEqual ? financeDto.getEps() : null)
+                    .per(isEqual ? financeDto.getPer() : null)
+                    .bps(isEqual ? financeDto.getBps() : null)
+                    .pbr(isEqual ? financeDto.getPbr() : null)
+                    .dps(isEqual ? financeDto.getDps() : null)
+                    .dy(isEqual ? financeDto.getDy() : null)
+                    .date(date)
                     .build();
 
             stockSet.add(stock);
+
+            if (isEqual && financeIter.hasNext()) financeDto = financeIter.next();
         }
 
-        driver.quit();
-        
-        System.out.println("Total number of stocks unequal is " + unequalCount);
         return stockSet;
     }
 
-    private static List<ArrayList<String>> crawlContents(String url, String date) throws InterruptedException {
-        System.out.println("start data crawling. url : " + url);
-        openBrowser(url);
+    private static <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
+            throws InterruptedException {
 
-        boolean isPossible = setDate(date);
-        if (!isPossible) throw new IllegalArgumentException("주말 또는 휴장일(" + date + ")");
-        System.out.println("Finish setting date. Selected date is " + date);
-        
-        List<WebElement> bodyArea = driver.findElements(By.cssSelector(".tui-grid-body-area"));
-        WebElement nameArea = bodyArea.get(0);
-        WebElement dataArea = bodyArea.get(1);
-
-        List<WebElement> companyList;
-        List<WebElement> dataElementList;
-
-        int rowCount = 0;
-        List<ArrayList<String>> result = new ArrayList<>();
-        while (scroll(rowCount, dataArea)) {
-            companyList = nameArea.findElements(By.cssSelector(".tui-grid-cell"));
-            dataElementList = dataArea.findElements(By.cssSelector(".tui-grid-row-odd, .tui-grid-row-even"));
-
-            for (int i = 0; i < dataElementList.size(); i++) {
-                WebElement row = dataElementList.get(i);
-
-                ArrayList<String> dataArr = new ArrayList<>();
-                dataArr.add(companyList.get(i).getText());
-
-                Iterator<WebElement> iter = row.findElements(By.cssSelector(".tui-grid-cell-content")).iterator();
-                while (iter.hasNext()) {
-                    dataArr.add(iter.next().getText());
-                }
-                result.add(dataArr);
-            }
-            if(result.size() > 10) break;
-            rowCount += dataElementList.size();
-
-            System.out.println("total number of rows : " + rowCount);
-            System.out.printf("%.2f%% done\n", (double) rowCount / 2800 * 100);
+        if (!isValidDate(date)) {
+            driver.quit();
+            throw new IllegalArgumentException("Invalid date format: " + date);
         }
 
+        startChromeDriver();
+
+        List<T> result = new ArrayList<>();
+        System.out.println("Open a window for crawling. url : " + url);
+        driver.get(url);
+        System.out.println(driver.getTitle());
+
+        boolean isPossible = setDate(date);
+        if (!isPossible) {
+            driver.quit();
+            throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
+        }
+        System.out.println("Finish setting date. Selected date is " + date);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        System.out.println("Wait until contents are loaded.");
+        wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
+        
+        System.out.println("Start to crawl contents.");
+        WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
+
+        int rowKey = 0;
+        boolean isScrollable = true;
+        while (true) {
+            isScrollable = scroll(rowKey, scrollArea);
+
+            List<WebElement> stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
+            while (stockElements.size() != 0) {
+                System.out.println(rowKey + ": " + stockElements.get(0).getText());
+
+                List<String> values = new ArrayList<>();
+                for (int idx = 0; idx < fieldCount; idx++) {
+                    values.add(stockElements.get(idx).getText());
+                }
+
+                result.add(builder.build(values));
+
+                stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
+            }
+
+            if (!isScrollable) break;
+        }
+
+        driver.quit();
+
         return result;
+    }
+
+    private static List<BaseStockDto> crawlBaseStock(String date) throws InterruptedException {
+        return crawlStocks(date,
+                "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF001.cmd",
+                values -> BaseStockDto.builder()
+                        .companyName(values.get(0))
+                        .marketCategory(values.get(1))
+                        .sector(values.get(2))
+                        .close(values.get(3))
+                        .change(values.get(4))
+                        .fluctuationRate(values.get(5))
+                        .tradingVolume(values.get(6))
+                        .tradingValue(values.get(7))
+                        .marketCap(values.get(8))
+                        .build(),
+                9);
+    }
+
+    private static List<FinanceStockDto> crawlFinanceStock(String date) throws InterruptedException {
+        return crawlStocks(date,
+                "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF002.cmd",
+                values -> FinanceStockDto.builder()
+                        .companyName(values.get(0))
+                        .close(values.get(1))
+                        .change(values.get(2))
+                        .fluctuationRate(values.get(3))
+                        .eps(values.get(4))
+                        .per(values.get(5))
+                        .bps(values.get(6))
+                        .pbr(values.get(7))
+                        .dps(values.get(8))
+                        .dy(values.get(9))
+                        .build(),
+                10);
+    }
+
+    private static boolean scroll(int rowKey, WebElement dataArea) throws InterruptedException {
+        int tryCount = 0;
+        WebElement firstElement = driver.findElement(
+                By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
+        int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
+
+        while (firstKey != rowKey && tryCount < 20) {
+            js.executeScript(
+                    firstKey > rowKey ? "arguments[0].scrollBy(0, -10);" : "arguments[0].scrollBy(0, 100);",
+                    dataArea);
+
+            System.out.println("scrolling... tryCount :" + ++tryCount);
+            Thread.sleep(20);
+
+            firstElement = driver.findElement(
+                    By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
+            firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
+        }
+
+        return tryCount < 20;
     }
 
     private static void startChromeDriver() {
@@ -154,38 +198,6 @@ public final class KrxCrawler {
         js = (JavascriptExecutor) driver;
 
         System.out.println("Chrome driver is up and running.");
-    }
-
-    private static void openBrowser(String url) {
-        // driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
-        driver.get(url);
-        System.out.println(driver.getTitle());
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-        System.out.println("wait until contents are loaded.");
-        wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
-    }
-
-    private static boolean scroll(int rowCount, WebElement dataArea) throws InterruptedException {
-        int tryCount = 0;
-        WebElement firstElement = driver.findElement(
-                By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
-        int firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
-
-        while (firstKey != rowCount && tryCount < 20) {
-            System.out.println("scrolling... tryCount :" + ++tryCount);
-            js.executeScript(
-                    firstKey > rowCount ? "arguments[0].scrollBy(0, -2);" : "arguments[0].scrollBy(0, 50);",
-                    dataArea);
-
-            Thread.sleep(20);
-
-            firstElement = driver.findElement(
-                    By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
-            firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
-        }
-
-        return tryCount < 20 ? true : false;
     }
 
     private static boolean setDate(String date) {
@@ -213,6 +225,7 @@ public final class KrxCrawler {
             int possibleDay = Integer.parseInt(dayElement.getText());
             if (desiredDay != possibleDay)
                 continue;
+
             dayElement.click();
             driver.findElement(By.className("CI-CAL-CONFIRM-BTN")).click();
             return true;
@@ -229,5 +242,14 @@ public final class KrxCrawler {
             selectedVal += desiredVal > selectedVal ? 1 : -1;
         }
         return calendar;
+    }
+
+    private static boolean isValidDate(String date) {
+        try {
+            LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 }

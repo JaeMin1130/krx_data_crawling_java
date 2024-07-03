@@ -17,21 +17,27 @@ public class Main {
     public static void main(String[] args) throws InterruptedException, IOException {
         Set<Stock> stockSet = new TreeSet<>();
         StockRepository stockRepo = new StockRepositoryImpl();
-        int maxCount = 5;
+        int maxCount = 1;
         // int maxCount = Integer.parseInt(args[0]);
         int count = 0;
         int idx = 0;
         while (count < maxCount) {
+            LocalDate selectedDate = now().plusDays(idx--);
             try {
-                LocalDate selectedDate = now().plusDays(idx--);
-                stockSet = KrxCrawler.execute(selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-            } catch (IllegalArgumentException e) {
+                stockSet = KrxCrawler.execute(selectedDate);
+            } catch (IllegalStateException e) {
                 System.out.println(e.toString());
                 continue;
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.toString());
+                break;
             }
+            System.out.println("Start to insert stock into DB. date: " + selectedDate);
             stockRepo.insertCrawledStocks(stockSet);
             count++;
         }
+
+        System.out.println("All jobs are finished.");
 
     }
 }
