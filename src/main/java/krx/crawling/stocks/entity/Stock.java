@@ -1,10 +1,11 @@
 package krx.crawling.stocks.entity;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -41,7 +42,9 @@ public class Stock implements Comparable<Stock> {
     private String pbr;
     private String dps;
     private String dy;
-    @Nonnull
+
+    @Column(nullable = false)
+    @Convert(converter = LocalDateConverter.class)
     private LocalDate date;
     
     @Override
