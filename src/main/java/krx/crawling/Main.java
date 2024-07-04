@@ -25,15 +25,12 @@ public class Main {
             WebDriver driver = closableDriver.getWebDriver();
             System.out.println("Chrome driver is up and running.");
 
-            // int year = Integer.parseInt(args[0]);
-            // int month = Integer.parseInt(args[1]);
-            // int day = Integer.parseInt(args[2]);
-            // LocalDate insertedDate = LocalDate.of(year, month, day);
-            // int maxCount = Integer.parseInt(args[3]);
+            int year = Integer.parseInt(args[0]);
+            int month = Integer.parseInt(args[1]);
+            int day = Integer.parseInt(args[2]);
+            LocalDate insertedDate = LocalDate.of(year, month, day);
+            int maxCount = Integer.parseInt(args[3]);
             
-            LocalDate insertedDate = LocalDate.of(2024, 7, 3);
-            int maxCount = 2;
-
             int count = 0;
             int idx = 0;
             
