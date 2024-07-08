@@ -118,7 +118,7 @@ public final class KrxCrawler {
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
 
-            if (isScrollable) break;
+            if (!isScrollable) break;
         }
 
         return result;
