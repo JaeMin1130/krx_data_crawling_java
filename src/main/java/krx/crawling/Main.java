@@ -42,8 +42,8 @@ public class Main {
         }
 
         long oneDay = 24 * 60 * 60 * 1000;
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-        ZonedDateTime tomorrowAt16 = now.plusDays(0).withHour(16).withMinute(30).withSecond(0).withNano(0);
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
+        ZonedDateTime tomorrowAt16 = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
         Date startDate = Date.from(tomorrowAt16.toInstant());
 
         System.out.println("A task will be executed at " + startDate + " for the first time.");
