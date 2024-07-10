@@ -1,8 +1,6 @@
 package krx.crawling.stocks.entity;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
