@@ -3,7 +3,6 @@ package krx.crawling;
 import static java.time.LocalDate.now;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -14,9 +13,8 @@ import java.util.TimerTask;
 import java.util.TreeSet;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
 import krx.crawling.stocks.entity.Stock;
 import krx.crawling.stocks.repository.StockRepository;
@@ -37,32 +35,29 @@ public class Main {
             }
         };
 
-        if(args.length != 0){   
+        if (args.length != 0) {
             System.out.println("Start to save initial datas");
             saveData(args);
             System.out.println("Stock datas of past 20 trading days were saved");
         }
-        
-        saveData(new String[]{"2024", "7", "9", "1"});
 
         long oneDay = 24 * 60 * 60 * 1000;
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
         ZonedDateTime tomorrowAt16 = now.plusDays(0).withHour(16).withMinute(30).withSecond(0).withNano(0);
         Date startDate = Date.from(tomorrowAt16.toInstant());
-        
+
         System.out.println("A task will be executed at " + startDate + " for the first time.");
-        // timer.schedule(task, startDate, oneDay);
-        timer.cancel();
+        timer.schedule(task, startDate, oneDay);
     }
 
     private static void saveData(String[] args) {
-        ChromeOptions options = new ChromeOptions();
-        // options.addArguments("--headless"); // Run Chrome in headless mode(no UI)
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("--headless"); // Run FireFox in headless mode(no UI)
         options.addArguments("--no-sandbox"); // Bypass OS security model
 
-        try (ClosableWebDriver closableDriver = new ClosableWebDriver(new ChromeDriver(options))) {
+        try (ClosableWebDriver closableDriver = new ClosableWebDriver(new FirefoxDriver(options))) {
             WebDriver driver = closableDriver.getWebDriver();
-            System.out.println("Chrome driver is up and running.");
+            System.out.println("FireFox driver is up and running.");
 
             // default 값 설정: 오늘 날짜, 하루치
             int year = args.length == 0 ? now().getYear() : Integer.parseInt(args[0]);
@@ -74,7 +69,7 @@ public class Main {
             int idx = 0;
             LocalDate insertedDate = LocalDate.of(year, month, day);
 
-            KrxCrawler krxCrawler = new KrxCrawler(driver, new WebDriverWait(driver, Duration.ofSeconds(10)));
+            KrxCrawler krxCrawler = new KrxCrawler(driver);
             StockRepository stockRepo = new StockRepositoryImpl();
             Set<Stock> stockSet = new TreeSet<>();
 
@@ -89,7 +84,7 @@ public class Main {
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                     break;
-                } catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                     break;
                 }
@@ -99,11 +94,10 @@ public class Main {
                 count++;
             }
 
-            krxCrawler = null;
             System.out.println("All jobs are finished.");
-        } 
+        }
 
-        System.out.println("Chrome driver is closed.");
+        System.out.println("FireFox driver is closed.");
     }
 
     // Wrapper class for WebDriver to implement AutoCloseable
