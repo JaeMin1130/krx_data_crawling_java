@@ -1,5 +1,6 @@
 package krx.crawling.utils;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -22,14 +23,12 @@ import krx.crawling.stocks.dto.StockDtoBuilder;
 import krx.crawling.stocks.entity.Stock;
 
 public final class KrxCrawler {
-    private final WebDriver driver;
-    private final WebDriverWait wait;
+    private WebDriver driver;
 
-    public KrxCrawler(WebDriver driver, WebDriverWait wait){
+    public KrxCrawler(WebDriver driver) {
         this.driver = driver;
-        this.wait = wait;
     }
-   
+
     public Set<Stock> execute(LocalDate date) throws InterruptedException {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
@@ -63,7 +62,7 @@ public final class KrxCrawler {
                     .bps(isEqual ? financeDto.getBps() : null)
                     .pbr(isEqual ? financeDto.getPbr() : null)
                     .dps(isEqual ? financeDto.getDps() : null)
-                    .dy(isEqual ? financeDto.getDy() : null)    
+                    .dy(isEqual ? financeDto.getDy() : null)
                     .date(date)
                     .build();
 
@@ -73,27 +72,28 @@ public final class KrxCrawler {
                 financeDto = financeIter.next();
         }
 
-        driver.quit();
         return stockSet;
     }
 
     private <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
             throws InterruptedException {
 
-        if (!isValidDate(date)) throw new IllegalArgumentException("Invalid date format: " + date);
+        if (!isValidDate(date))
+            throw new IllegalArgumentException("Invalid date format: " + date);
 
-        
         List<T> result = new ArrayList<>();
-        System.out.println("Open a window for crawling. url : " + url);
+        System.out.println("Open a window for crawling. url: " + url);
         driver.get(url);
-        System.out.println(driver.getTitle());
-        
+
+        // System.out.println(driver.getTitle());
+
         boolean isPossible = setDate(date);
         if (!isPossible) {
             throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
         }
         System.out.println("Finish setting date. Selected date is " + date);
-        
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         System.out.println("Wait until contents are loaded.");
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
 
@@ -120,7 +120,7 @@ public final class KrxCrawler {
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
 
-            if (isScrollable) break;
+            if (!isScrollable) break;
         }
 
         return result;
@@ -207,8 +207,8 @@ public final class KrxCrawler {
         List<WebElement> possibleDayList = calendar.findElements(By.tagName("a"));
         for (WebElement dayElement : possibleDayList) {
             int possibleDay = Integer.parseInt(dayElement.getText());
-            if (desiredDay != possibleDay)
-                continue;
+
+            if (desiredDay != possibleDay) continue;
 
             dayElement.click();
             driver.findElement(By.className("CI-CAL-CONFIRM-BTN")).click();
@@ -225,6 +225,7 @@ public final class KrxCrawler {
             calendar = driver.findElement(By.className("calendar"));
             selectedVal += desiredVal > selectedVal ? 1 : -1;
         }
+        
         return calendar;
     }
 
