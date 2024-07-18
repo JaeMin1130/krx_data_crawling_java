@@ -15,6 +15,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import krx.crawling.stocks.dto.BaseStockDto;
@@ -85,17 +86,23 @@ public final class KrxCrawler {
         System.out.println("Open a window for crawling. url: " + url);
         driver.get(url);
 
-        // System.out.println(driver.getTitle());
+        System.out.println(driver.getTitle());
 
         boolean isPossible = setDate(date);
-        if (!isPossible) {
-            throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
-        }
+        if (!isPossible) throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
+    
         System.out.println("Finish setting date. Selected date is " + date);
 
+        System.out.println("Click a submit button.");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.elementToBeClickable(By.className("btnSubmit"))).click();
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".loading-bar-wrap.small")));
+        
         System.out.println("Wait until contents are loaded.");
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
+        System.out.println("Contents are loaded.");
+        
+        Thread.sleep(10000);
 
         System.out.println("Start to crawl contents.");
         WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
