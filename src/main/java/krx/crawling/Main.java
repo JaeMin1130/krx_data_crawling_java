@@ -31,7 +31,8 @@ public class Main {
                 System.out.println("Running a task...");
                 saveData(args);
                 System.out.println("Finish the task.");
-                System.out.println("The next task will be executed tomorrow at 4:00 PM.");
+
+                System.out.println("The next task will be executed " + now().plusDays(1) +  " at 16:00.");
             }
         };
 
