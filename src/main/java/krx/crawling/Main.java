@@ -1,16 +1,20 @@
 package krx.crawling;
 
-import static java.time.LocalDate.now;
-
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -22,24 +26,56 @@ import krx.crawling.stocks.repository.StockRepositoryImpl;
 import krx.crawling.utils.KrxCrawler;
 
 public class Main {
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
+
+    static {
+        try {
+            // Load logging configuration from file
+            LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+
+            // Remove default FileHandler if it exists
+            for (Handler handler : Logger.getLogger("").getHandlers()) {
+                if (handler instanceof FileHandler) {
+                    Logger.getLogger("").removeHandler(handler);
+                }
+            }
+
+            String logDir = "./volume/logs/";
+            File directory = new File(logDir);
+            if (!directory.exists()) {
+                directory.mkdirs(); // Create the directory if it does not exist
+            }
+
+            // Add custom FileHandler with date-based filename
+            String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            FileHandler fileHandler = new FileHandler(logDir + "krx_" + date + ".log", true);
+            fileHandler.setFormatter(new java.util.logging.SimpleFormatter());
+            Logger.getLogger("").addHandler(fileHandler);
+
+        } catch (IOException e) {
+            System.err.println("Could not configure logging.");
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws InterruptedException, IOException {
         Timer timer = new Timer();
 
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                System.out.println("Running a task...");
+                logger.info("Running a task...");
                 saveData(args);
-                System.out.println("Finish the task.");
+                logger.info("Finish the task.");
 
-                System.out.println("The next task will be executed " + now().plusDays(1) +  " at 16:00.");
+                logger.info(String.format("The next task will be executed %s at 16:00.", LocalDate.now().plusDays(1)));
             }
         };
 
         if (args.length != 0) {
-            System.out.println("Start to save initial datas");
+            logger.info("Start to save initial datas");
             saveData(args);
-            System.out.println("Stock datas of past 20 trading days were saved");
+            logger.info(String.format("Stock datas of past %s trading days were saved", args[3]));
         }
 
         long oneDay = 24 * 60 * 60 * 1000;
@@ -47,23 +83,22 @@ public class Main {
         ZonedDateTime tomorrowAt16 = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
         Date startDate = Date.from(tomorrowAt16.toInstant());
 
-        System.out.println("A task will be executed at " + startDate + " for the first time.");
+        logger.info(String.format("A task will be executed at %s for the first time.", startDate));
         timer.schedule(task, startDate, oneDay);
     }
 
     private static void saveData(String[] args) {
         FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("--headless"); // Run FireFox in headless mode(no UI)
-        options.addArguments("--no-sandbox"); // Bypass OS security model
+        options.addArguments("--headless");
+        options.addArguments("--no-sandbox");
 
         try (ClosableWebDriver closableDriver = new ClosableWebDriver(new FirefoxDriver(options))) {
             WebDriver driver = closableDriver.getWebDriver();
-            System.out.println("FireFox driver is up and running.");
+            logger.info("FireFox driver is up and running.");
 
-            // default 값 설정: 오늘 날짜, 하루치
-            int year = args.length == 0 ? now().getYear() : Integer.parseInt(args[0]);
-            int month = args.length == 0 ? now().getMonthValue() : Integer.parseInt(args[1]);
-            int day = args.length == 0 ? now().getDayOfMonth() : Integer.parseInt(args[2]);
+            int year = args.length == 0 ? LocalDate.now().getYear() : Integer.parseInt(args[0]);
+            int month = args.length == 0 ? LocalDate.now().getMonthValue() : Integer.parseInt(args[1]);
+            int day = args.length == 0 ? LocalDate.now().getDayOfMonth() : Integer.parseInt(args[2]);
             int numOfDays = args.length == 0 ? 1 : Integer.parseInt(args[3]);
 
             int count = 0;
@@ -80,28 +115,27 @@ public class Main {
                 try {
                     stockSet = krxCrawler.execute(selectedDate);
                 } catch (IllegalStateException e) {
-                    e.printStackTrace();
+                    logger.severe("IllegalStateException occurred: " + e.getMessage());
                     continue;
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    logger.severe("IllegalArgumentException occurred: " + e.getMessage());
                     break;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.severe("Exception occurred: " + e.getMessage());
                     break;
                 }
 
-                System.out.println("Start to insert stock into DB. date: " + selectedDate);
+                logger.info(String.format("Start to insert stock into DB. date: %s", selectedDate));
                 stockRepo.insertCrawledStocks(stockSet);
                 count++;
             }
 
-            System.out.println("All jobs are finished.");
+            logger.info("All jobs are finished.");
         }
 
-        System.out.println("FireFox driver is closed.");
+        logger.info("FireFox driver is closed.");
     }
 
-    // Wrapper class for WebDriver to implement AutoCloseable
     static class ClosableWebDriver implements AutoCloseable {
         private final WebDriver webDriver;
 

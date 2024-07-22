@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import org.openqa.selenium.By;
@@ -24,6 +26,7 @@ import krx.crawling.stocks.dto.StockDtoBuilder;
 import krx.crawling.stocks.entity.Stock;
 
 public final class KrxCrawler {
+    private static final Logger logger = Logger.getLogger(KrxCrawler.class.getName());
     private WebDriver driver;
 
     public KrxCrawler(WebDriver driver) {
@@ -34,13 +37,13 @@ public final class KrxCrawler {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         List<BaseStockDto> baseDtoList = crawlBaseStock(strDate);
-        System.out.println("--------------Finish base data crawling--------------");
+        logger.info("--------------Finish base data crawling--------------");
 
         List<FinanceStockDto> financeDataList = crawlFinanceStock(strDate);
-        System.out.println("--------------Finish finance data crawling--------------");
+        logger.info("--------------Finish finance data crawling--------------");
 
-        System.out.println("base: " + baseDtoList.size());
-        System.out.println("finance: " + financeDataList.size());
+        logger.info("base: " + baseDtoList.size());
+        logger.info("finance: " + financeDataList.size());
 
         Set<Stock> stockSet = new TreeSet<>();
 
@@ -83,28 +86,28 @@ public final class KrxCrawler {
             throw new IllegalArgumentException("Invalid date format: " + date);
 
         List<T> result = new ArrayList<>();
-        System.out.println("Open a window for crawling. url: " + url);
+        logger.info("Open a window for crawling. url: " + url);
         driver.get(url);
 
-        System.out.println(driver.getTitle());
+        logger.info(driver.getTitle());
 
         boolean isPossible = setDate(date);
-        if (!isPossible) throw new IllegalStateException("주말 또는 휴장일(" + date + ")");
-    
-        System.out.println("Finish setting date. Selected date is " + date);
+        if (!isPossible) throw new IllegalStateException("Weekend or holiday (" + date + ")");
 
-        System.out.println("Click a submit button.");
+        logger.info("Finish setting date. Selected date is " + date);
+
+        logger.info("Click a submit button.");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.elementToBeClickable(By.className("btnSubmit"))).click();
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".loading-bar-wrap.small")));
-        
-        System.out.println("Wait until contents are loaded.");
+
+        logger.info("Wait until contents are loaded.");
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
-        System.out.println("Contents are loaded.");
-        
+        logger.info("Contents are loaded.");
+
         Thread.sleep(10000);
 
-        System.out.println("Start to crawl contents.");
+        logger.info("Start to crawl contents.");
         WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
 
         int rowKey = 0;
@@ -115,14 +118,15 @@ public final class KrxCrawler {
             List<WebElement> stockElements = driver
                     .findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
             while (stockElements.size() != 0) {
-                System.out.println(rowKey + ": " + stockElements.get(0).getText());
+                // logger.info(rowKey + ": " + stockElements.get(0).getText());
 
                 List<String> values = new ArrayList<>();
                 for (int idx = 0; idx < fieldCount; idx++) {
                     values.add(stockElements.get(idx).getText());
                 }
-
-                result.add(builder.build(values));
+                T stock = builder.build(values);
+                result.add(stock);
+                logger.info(stock.toString());
 
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
@@ -180,7 +184,7 @@ public final class KrxCrawler {
                     firstKey > rowKey ? "arguments[0].scrollBy(0, -10);" : "arguments[0].scrollBy(0, 100);",
                     dataArea);
 
-            System.out.println("scrolling... tryCount :" + ++tryCount);
+            // logger.info("scrolling... tryCount :" + ++tryCount);
             Thread.sleep(20);
 
             firstElement = driver.findElement(
@@ -195,7 +199,7 @@ public final class KrxCrawler {
         driver.findElement(By.className("CI-CAL-OPEN-BTN")).click();
         WebElement calendar = driver.findElement(By.className("calendar"));
 
-        // 1. 년, 월 맞추기
+        // 1. Year and Month
         int[] desiredDate = Stream.of(date.split("-")).mapToInt(Integer::parseInt).toArray();
         int desiredYear = desiredDate[0];
         int desiredMonth = desiredDate[1];
@@ -208,9 +212,9 @@ public final class KrxCrawler {
 
         calendar = setYearMonth(calendar, desiredYear, selectedYear, "Year");
         calendar = setYearMonth(calendar, desiredMonth, selectedMonth, "Month");
-        System.out.println("Finish setting year and month.");
+        logger.info("Finish setting year and month.");
 
-        // 2. 선택 가능한 날인지 확인(주말, 휴장일)
+        // 2. Check if day is selectable
         List<WebElement> possibleDayList = calendar.findElements(By.tagName("a"));
         for (WebElement dayElement : possibleDayList) {
             int possibleDay = Integer.parseInt(dayElement.getText());
@@ -222,7 +226,7 @@ public final class KrxCrawler {
             return true;
         }
 
-        System.out.println("Inserted date is not available.");
+        logger.warning("Inserted date is not available.");
         return false;
     }
 
@@ -232,7 +236,7 @@ public final class KrxCrawler {
             calendar = driver.findElement(By.className("calendar"));
             selectedVal += desiredVal > selectedVal ? 1 : -1;
         }
-        
+
         return calendar;
     }
 
@@ -241,6 +245,7 @@ public final class KrxCrawler {
             LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             return true;
         } catch (DateTimeParseException e) {
+            logger.log(Level.SEVERE, "Date parsing failed for: " + date, e);
             return false;
         }
     }
