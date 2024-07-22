@@ -28,36 +28,6 @@ import krx.crawling.utils.KrxCrawler;
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
-    static {
-        try {
-            // Load logging configuration from file
-            LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
-
-            // Remove default FileHandler if it exists
-            for (Handler handler : Logger.getLogger("").getHandlers()) {
-                if (handler instanceof FileHandler) {
-                    Logger.getLogger("").removeHandler(handler);
-                }
-            }
-
-            String logDir = "./volume/logs/";
-            File directory = new File(logDir);
-            if (!directory.exists()) {
-                directory.mkdirs(); // Create the directory if it does not exist
-            }
-
-            // Add custom FileHandler with date-based filename
-            String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            FileHandler fileHandler = new FileHandler(logDir + "krx_" + date + ".log", true);
-            fileHandler.setFormatter(new java.util.logging.SimpleFormatter());
-            Logger.getLogger("").addHandler(fileHandler);
-
-        } catch (IOException e) {
-            System.err.println("Could not configure logging.");
-            e.printStackTrace();
-        }
-    }
-
     public static void main(String[] args) throws InterruptedException, IOException {
         Timer timer = new Timer();
 
@@ -72,7 +42,7 @@ public class Main {
             }
         };
 
-        if (args.length != 0) {
+        if (args.length == 0) {
             logger.info("Start to save initial datas");
             saveData(args);
             logger.info(String.format("Stock datas of past %s trading days were saved", args[3]));
@@ -113,7 +83,8 @@ public class Main {
                 LocalDate selectedDate = insertedDate.plusDays(idx--);
 
                 try {
-                    stockSet = krxCrawler.execute(selectedDate);
+                    // stockSet = krxCrawler.execute(selectedDate);
+                    stockSet = krxCrawler.execute(LocalDate.of(2024, 7, 15));
                 } catch (IllegalStateException e) {
                     logger.severe("IllegalStateException occurred: " + e.getMessage());
                     continue;
