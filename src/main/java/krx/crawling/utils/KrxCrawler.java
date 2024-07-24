@@ -28,9 +28,11 @@ import krx.crawling.stocks.entity.Stock;
 public final class KrxCrawler {
     private static final Logger logger = Logger.getLogger(KrxCrawler.class.getName());
     private WebDriver driver;
+    private WebDriverWait wait;
 
     public KrxCrawler(WebDriver driver) {
         this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
     public Set<Stock> execute(LocalDate date) throws InterruptedException {
@@ -39,15 +41,15 @@ public final class KrxCrawler {
         List<BaseStockDto> baseDtoList = crawlBaseStock(strDate);
         logger.info("--------------Finish base data crawling--------------");
 
-        List<FinanceStockDto> financeDataList = crawlFinanceStock(strDate);
+        List<FinanceStockDto> financeDtoList = crawlFinanceStock(strDate);
         logger.info("--------------Finish finance data crawling--------------");
 
         logger.info("base: " + baseDtoList.size());
-        logger.info("finance: " + financeDataList.size());
+        logger.info("finance: " + financeDtoList.size());
 
         Set<Stock> stockSet = new TreeSet<>();
 
-        Iterator<FinanceStockDto> financeIter = financeDataList.iterator();
+        Iterator<FinanceStockDto> financeIter = financeDtoList.iterator();
         FinanceStockDto financeDto = financeIter.next();
         boolean isEqual;
         for (BaseStockDto baseDto : baseDtoList) {
@@ -95,18 +97,18 @@ public final class KrxCrawler {
         if (!isPossible) throw new IllegalStateException("Weekend or holiday (" + date + ")");
 
         logger.info("Finish setting date. Selected date is " + date);
-
-        logger.info("Click a submit button.");
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.elementToBeClickable(By.className("btnSubmit"))).click();
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".loading-bar-wrap.small")));
-
-        logger.info("Wait until contents are loaded.");
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
+        Thread.sleep(100);
+        
+        logger.info("Click a submit button.");
+        wait.until(ExpectedConditions.elementToBeClickable(By.className("btnSubmit"))).click();
+        Thread.sleep(100);
+        
+        logger.info("Wait until contents are loaded.");
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".loading-bar-wrap.small")));
         logger.info("Contents are loaded.");
-
-        Thread.sleep(10000);
-
+        Thread.sleep(1000);
+        
         logger.info("Start to crawl contents.");
         WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
 
@@ -181,10 +183,11 @@ public final class KrxCrawler {
 
         while (firstKey != rowKey && tryCount < 20) {
             js.executeScript(
-                    firstKey > rowKey ? "arguments[0].scrollBy(0, -10);" : "arguments[0].scrollBy(0, 100);",
+                    firstKey > rowKey ? "arguments[0].scrollBy(0, -20);" : "arguments[0].scrollBy(0, 100);",
                     dataArea);
 
-            // logger.info("scrolling... tryCount :" + ++tryCount);
+            tryCount++;
+            // logger.info("scrolling... tryCount: " + tryCount);
             Thread.sleep(20);
 
             firstElement = driver.findElement(
