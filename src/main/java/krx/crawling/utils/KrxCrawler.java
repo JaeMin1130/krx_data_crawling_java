@@ -84,16 +84,16 @@ public final class KrxCrawler {
     private <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
             throws InterruptedException {
 
-        if (!isValidDate(date))
-            throw new IllegalArgumentException("Invalid date format: " + date);
+        if (!isValidDate(date)) throw new IllegalArgumentException("Invalid date format: " + date);
 
         List<T> result = new ArrayList<>();
+
         logger.info("Open a window for crawling. url: " + url);
         driver.get(url);
-
         logger.info(driver.getTitle());
 
         boolean isPossible = setDate(date);
+
         if (!isPossible) throw new IllegalStateException("Weekend or holiday (" + date + ")");
 
         logger.info("Finish setting date. Selected date is " + date);
