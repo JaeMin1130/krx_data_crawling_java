@@ -22,6 +22,7 @@ import krx.crawling.utils.KrxCrawler;
 import krx.crawling.utils.LoggerSetup;
 
 public class Main {
+
     private static final Logger logger = LoggerSetup.getLogger();
 
     public static void main(String[] args) throws InterruptedException, IOException {
@@ -39,6 +40,7 @@ public class Main {
 
         if (args.length != 0) {
             logger.info("Start to save initial data");
+          
             saveData(args);
             logger.info(String.format("Stock data of past %s trading days were saved", args[3]));
         }
@@ -78,7 +80,8 @@ public class Main {
                 LocalDate selectedDate = insertedDate.plusDays(idx--);
 
                 try {
-                    stockSet = krxCrawler.execute(selectedDate);
+                    // stockSet = krxCrawler.execute(selectedDate);
+                    stockSet = krxCrawler.execute(LocalDate.of(2024, 7, 15));
                 } catch (IllegalStateException e) {
                     logger.severe("IllegalStateException occurred: " + e.getMessage());
                     continue;
