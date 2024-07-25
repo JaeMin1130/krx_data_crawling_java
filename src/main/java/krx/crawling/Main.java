@@ -1,19 +1,14 @@
 package krx.crawling;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.openqa.selenium.WebDriver;
@@ -24,9 +19,11 @@ import krx.crawling.stocks.entity.Stock;
 import krx.crawling.stocks.repository.StockRepository;
 import krx.crawling.stocks.repository.StockRepositoryImpl;
 import krx.crawling.utils.KrxCrawler;
+import krx.crawling.utils.LoggerSetup;
 
 public class Main {
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
+
+    private static final Logger logger = LoggerSetup.getLogger();
 
     public static void main(String[] args) throws InterruptedException, IOException {
         Timer timer = new Timer();
@@ -35,17 +32,17 @@ public class Main {
             @Override
             public void run() {
                 logger.info("Running a task...");
-                saveData(args);
+                saveData(new String[]{});
                 logger.info("Finish the task.");
-
                 logger.info(String.format("The next task will be executed %s at 16:00.", LocalDate.now().plusDays(1)));
             }
         };
 
-        if (args.length == 0) {
-            logger.info("Start to save initial datas");
+        if (args.length != 0) {
+            logger.info("Start to save initial data");
+          
             saveData(args);
-            logger.info(String.format("Stock datas of past %s trading days were saved", args[3]));
+            logger.info(String.format("Stock data of past %s trading days were saved", args[3]));
         }
 
         long oneDay = 24 * 60 * 60 * 1000;
@@ -64,7 +61,7 @@ public class Main {
 
         try (ClosableWebDriver closableDriver = new ClosableWebDriver(new FirefoxDriver(options))) {
             WebDriver driver = closableDriver.getWebDriver();
-            logger.info("FireFox driver is up and running.");
+            logger.info("Firefox driver is up and running.");
 
             int year = args.length == 0 ? LocalDate.now().getYear() : Integer.parseInt(args[0]);
             int month = args.length == 0 ? LocalDate.now().getMonthValue() : Integer.parseInt(args[1]);
@@ -104,7 +101,7 @@ public class Main {
             logger.info("All jobs are finished.");
         }
 
-        logger.info("FireFox driver is closed.");
+        logger.info("Firefox driver is closed.");
     }
 
     static class ClosableWebDriver implements AutoCloseable {
