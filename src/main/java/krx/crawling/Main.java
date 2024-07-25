@@ -2,6 +2,7 @@ package krx.crawling;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -32,6 +33,7 @@ public class Main {
             @Override
             public void run() {
                 logger.info("Running a task...");
+                logger.info("Current time is " + LocalDateTime.now(ZoneId.of("Asia/Seoul")));
                 saveData(new String[]{});
                 logger.info("Finish the task.");
                 logger.info(String.format("The next task will be executed %s at 16:00.", LocalDate.now().plusDays(1)));
@@ -80,8 +82,7 @@ public class Main {
                 LocalDate selectedDate = insertedDate.plusDays(idx--);
 
                 try {
-                    // stockSet = krxCrawler.execute(selectedDate);
-                    stockSet = krxCrawler.execute(LocalDate.of(2024, 7, 15));
+                    stockSet = krxCrawler.execute(selectedDate);
                 } catch (IllegalStateException e) {
                     logger.severe("IllegalStateException occurred: " + e.getMessage());
                     continue;
