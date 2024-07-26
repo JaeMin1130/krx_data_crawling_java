@@ -69,7 +69,7 @@ public final class KrxCrawler {
                     .pbr(isEqual ? financeDto.getPbr() : null)
                     .dps(isEqual ? financeDto.getDps() : null)
                     .dy(isEqual ? financeDto.getDy() : null)
-                    .date(date)
+                    .date(strDate)
                     .build();
 
             stockSet.add(stock);

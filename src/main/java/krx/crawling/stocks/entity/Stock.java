@@ -41,11 +41,10 @@ public class Stock implements Comparable<Stock> {
     private String pbr;
     private String dps;
     private String dy;
-
-    @Column(nullable = false)
-    @Convert(converter = LocalDateConverter.class)
-    private LocalDate date;
     
+    @Column(nullable = false)
+    private String date;
+
     @Override
     public int compareTo(Stock o) {
         return String.CASE_INSENSITIVE_ORDER.compare(this.companyName, o.companyName);

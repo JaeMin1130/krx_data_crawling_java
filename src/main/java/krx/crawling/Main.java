@@ -61,38 +61,33 @@ public class Main {
                         logger.info("Running a liveJob...");
                         logger.info("Input value: " + Arrays.toString(input));
                         logger.info("Current time is " + LocalDateTime.now(ZoneId.of("Asia/Seoul")));
-                        
+
                         saveData(input);
                         logger.info("Finish the liveJob.");
                     }catch(NumberFormatException e){
                         logger.warning("Some inputs you entered are not a number!! Enter a input of a nuber format!!");
                         continue;
+                    }catch(IllegalStateException e){
+                        logger.warning(e.getMessage());
+                        continue;
                     }catch(DateTimeException e){
                         logger.warning(e.getMessage());
                         continue;
-                    }catch(IllegalStateException e){
-                        logger.warning(e.getMessage());
+                    }catch(Exception e){
+                        logger.severe(e.getMessage());
                         continue;
                     }
                 }
             }
         };
         
-        if (args.length != 0) {
-            logger.info("Start to save initial data");
-
-            saveData(args);
-            logger.info(String.format("Stock data of past %s trading days were saved", args[3]));
-        }
-
+        // Schedule the batchJob to run at 16:00 every day
         long oneDay = 24 * 60 * 60 * 1000;
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
         ZonedDateTime todayAt16 = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
         long initialDelay = Date.from(todayAt16.toInstant()).getTime() - System.currentTimeMillis();
 
         logger.info(String.format("A batchJob will be executed at %s for the first time.", todayAt16));
-
-        // Schedule the batchJob to run at 16:00 every day
         scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
 
         // Run the liveJob in the foreground
@@ -141,8 +136,10 @@ public class Main {
                     break;
                 }
 
-                logger.info(String.format("Start to insert stock into DB. date: %s", selectedDate));
-                stockRepo.insertCrawledStocks(stockSet);
+                logger.info(String.format("Start UPSERT, date: %s", selectedDate));
+                int totalCount = stockRepo.upsertCrawledStocks(stockSet);
+                logger.info(String.format("Finish UPSERT, totalCount: %s", totalCount));
+
                 count++;
             }
 
