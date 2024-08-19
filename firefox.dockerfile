@@ -1,12 +1,12 @@
 FROM openjdk:17.0.1-jdk-slim
 
 # Update and install necessary tools
-RUN apt-get -y update && \
-    apt-get -y install wget unzip curl && \
-    apt-get -y install firefox-esr && \
-    wget -O /tmp/geckodriver-v0.33.0-linux64.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-linux64.tar.gz && \
-    tar -xzf /tmp/geckodriver-v0.33.0-linux64.tar.gz -C /usr/bin && \
-    rm /tmp/geckodriver-v0.33.0-linux64.tar.gz
+RUN apt-get -y update 
+RUN apt-get -y install wget unzip curl 
+RUN apt-get -y install firefox-esr 
+RUN wget -O /tmp/geckodriver-v0.34.0-linux64.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz 
+RUN tar -xzf /tmp/geckodriver-v0.34.0-linux64.tar.gz -C /usr/bin 
+RUN rm /tmp/geckodriver-v0.34.0-linux64.tar.gz
 
 # Set working directory
 WORKDIR /app

@@ -90,6 +90,11 @@ public class Main {
         logger.info(String.format("A batchJob will be executed at %s for the first time.", todayAt16));
         scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
 
+        // Schedule a task to reconfigure the logger at midnight every day
+        ZonedDateTime tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        long midnightDelay = Date.from(tomorrowMidnight.toInstant()).getTime() - System.currentTimeMillis();
+        scheduler.scheduleAtFixedRate(LoggerSetup::getLogger, midnightDelay, oneDay, TimeUnit.MILLISECONDS);
+
         // Run the liveJob in the foreground
         Thread liveJobThread = new Thread(liveJob);
         liveJobThread.start();

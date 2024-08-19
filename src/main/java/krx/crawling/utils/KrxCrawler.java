@@ -53,8 +53,9 @@ public final class KrxCrawler {
         FinanceStockDto financeDto = financeIter.next();
         boolean isEqual;
         for (BaseStockDto baseDto : baseDtoList) {
-            isEqual = baseDto.getCompanyName().equals(financeDto.getCompanyName());
-
+            // isEqual = baseDto.getCompanyName().equals(financeDto.getCompanyName());
+            isEqual = financeDto.getCompanyName().contains(baseDto.getCompanyName());
+            
             Stock stock = Stock.builder()
                     .companyName(baseDto.getCompanyName())
                     .marketCategory(baseDto.getMarketCategory())
@@ -73,6 +74,8 @@ public final class KrxCrawler {
                     .build();
 
             stockSet.add(stock);
+
+            logger.info(stock.toString());
 
             if (isEqual && financeIter.hasNext())
                 financeDto = financeIter.next();
