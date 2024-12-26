@@ -8,12 +8,17 @@ import krx.crawling.utils.JPAUtil;
 
 public class StockRepositoryImpl implements StockRepository {
     @Override
-    public void insertCrawledStocks(Set<Stock> stockSet) {
+    public int insertCrawledStocks(Set<Stock> stockSet) {
+        int count = 0;
+        
         for (Stock stock : stockSet) {
             JPAUtil.inTransaction(entityManager -> {
                 entityManager.persist(stock);
             });
+            count++;
         }
+
+        return count;
     }
 
     @Override

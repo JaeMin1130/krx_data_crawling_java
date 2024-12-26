@@ -5,7 +5,7 @@ import java.util.Set;
 import krx.crawling.stocks.entity.Stock;
 
 public interface StockRepository {
-    void insertCrawledStocks(Set<Stock> stockSet);
+    int insertCrawledStocks(Set<Stock> stockSet);
     int upsertCrawledStocks(Set<Stock> stockSet);
     // void deleteOldestStock();
 }

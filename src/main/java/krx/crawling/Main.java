@@ -36,18 +36,18 @@ public class Main {
         Runnable batchJob = () -> {
             logger.info("Running a batchJob...");
             logger.info("Current time is " + LocalDateTime.now(ZoneId.of("Asia/Seoul")));
-            
-            saveData(new String[]{});
-            
+
+            saveData(new String[] {});
+
             logger.info("Finish the batchJob.");
             logger.info(String.format("The next batchJob will be executed %s at 16:00.", LocalDate.now().plusDays(1)));
         };
-        
+
         Runnable liveJob = () -> {
             try (Scanner sc = new Scanner(System.in)) {
                 while (true) {
                     String[] input = new String[4];
-                    
+
                     System.out.println("Enter a year");
                     input[0] = sc.nextLine().trim();
                     System.out.println("Enter a month");
@@ -56,31 +56,31 @@ public class Main {
                     input[2] = sc.nextLine().trim();
                     System.out.println("Enter a number of days to crawl");
                     input[3] = sc.nextLine().trim();
-                    
-                    try{
+
+                    try {
                         logger.info("Running a liveJob...");
                         logger.info("Input value: " + Arrays.toString(input));
                         logger.info("Current time is " + LocalDateTime.now(ZoneId.of("Asia/Seoul")));
 
                         saveData(input);
                         logger.info("Finish the liveJob.");
-                    }catch(NumberFormatException e){
+                    } catch (NumberFormatException e) {
                         logger.warning("Some inputs you entered are not a number!! Enter a input of a nuber format!!");
                         continue;
-                    }catch(IllegalStateException e){
+                    } catch (IllegalStateException e) {
                         logger.warning(e.getMessage());
                         continue;
-                    }catch(DateTimeException e){
+                    } catch (DateTimeException e) {
                         logger.warning(e.getMessage());
                         continue;
-                    }catch(Exception e){
+                    } catch (Exception e) {
                         logger.severe(e.getMessage());
                         continue;
                     }
                 }
             }
         };
-        
+
         // Schedule the batchJob to run at 16:00 every day
         long oneDay = 24 * 60 * 60 * 1000;
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
@@ -88,7 +88,7 @@ public class Main {
         long initialDelay = Date.from(todayAt16.toInstant()).getTime() - System.currentTimeMillis();
 
         logger.info(String.format("A batchJob will be executed at %s for the first time.", todayAt16));
-        scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
+        // scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
 
         // Schedule a task to reconfigure the logger at midnight every day
         ZonedDateTime tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
@@ -111,7 +111,8 @@ public class Main {
 
             int curYear = LocalDate.now().getYear();
             int year = args.length == 0 ? curYear : Integer.parseInt(args[0]);
-            if(year < curYear - 4 || year > curYear + 4) throw new IllegalStateException("It is only possible to crawl within the current year ± 4.");
+            if (year < curYear - 4 || year > curYear + 4)
+                throw new IllegalStateException("It is only possible to crawl within the current year ± 4.");
 
             int month = args.length == 0 ? LocalDate.now().getMonthValue() : Integer.parseInt(args[1]);
             int day = args.length == 0 ? LocalDate.now().getDayOfMonth() : Integer.parseInt(args[2]);
@@ -142,8 +143,9 @@ public class Main {
                 }
 
                 logger.info(String.format("Start UPSERT, date: %s", selectedDate));
-                int totalCount = stockRepo.upsertCrawledStocks(stockSet);
-                logger.info(String.format("Finish UPSERT, totalCount: %s", totalCount));
+                // int totalCount = stockRepo.upsertCrawledStocks(stockSet);
+                int totalCount = stockRepo.insertCrawledStocks(stockSet);
+                logger.info(String.format("Finish INSERT, totalCount: %s", totalCount));
 
                 count++;
             }

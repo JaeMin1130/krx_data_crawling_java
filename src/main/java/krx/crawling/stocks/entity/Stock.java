@@ -1,9 +1,7 @@
 package krx.crawling.stocks.entity;
 
-import java.time.LocalDate;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,12 +20,13 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "stock", uniqueConstraints = @UniqueConstraint(columnNames = { "companyName", "date" }))
+@Table(name = "stock", uniqueConstraints = @UniqueConstraint(columnNames = {"companyName", "date"}))
 public class Stock implements Comparable<Stock> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    
+
+    @Column(name = "companyName", nullable = false)
     private String companyName;
     private String marketCategory;
     private String sector;
@@ -41,8 +40,8 @@ public class Stock implements Comparable<Stock> {
     private String pbr;
     private String dps;
     private String dy;
-    
-    @Column(nullable = false)
+
+    @Column(name = "date", nullable = false)
     private String date;
 
     @Override
