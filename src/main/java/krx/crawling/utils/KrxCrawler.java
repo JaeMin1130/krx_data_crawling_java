@@ -20,10 +20,10 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import krx.crawling.stocks.dto.BaseStockDto;
-import krx.crawling.stocks.dto.FinanceStockDto;
-import krx.crawling.stocks.dto.StockDtoBuilder;
-import krx.crawling.stocks.entity.Stock;
+import krx.crawling.model.dao.BaseStockDao;
+import krx.crawling.model.dao.FinanceStockDao;
+import krx.crawling.model.dao.StockDao;
+import krx.crawling.model.dao.StockDaoBuilder;
 
 public final class KrxCrawler {
     private static final Logger logger = Logger.getLogger(KrxCrawler.class.getName());
@@ -35,41 +35,41 @@ public final class KrxCrawler {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
-    public Set<Stock> execute(LocalDate date) throws InterruptedException {
+    public Set<StockDao> execute(LocalDate date) throws InterruptedException {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        List<BaseStockDto> baseDtoList = crawlBaseStock(strDate);
+        List<BaseStockDao> baseDaoList = crawlBaseStock(strDate);
         logger.info("--------------Finish base data crawling--------------");
 
-        List<FinanceStockDto> financeDtoList = crawlFinanceStock(strDate);
+        List<FinanceStockDao> financeDaoList = crawlFinanceStock(strDate);
         logger.info("--------------Finish finance data crawling--------------");
 
-        logger.info("base: " + baseDtoList.size());
-        logger.info("finance: " + financeDtoList.size());
+        logger.info("base: " + baseDaoList.size());
+        logger.info("finance: " + financeDaoList.size());
 
-        Set<Stock> stockSet = new TreeSet<>();
+        Set<StockDao> stockSet = new TreeSet<>();
 
-        Iterator<FinanceStockDto> financeIter = financeDtoList.iterator();
-        FinanceStockDto financeDto = financeIter.next();
+        Iterator<FinanceStockDao> financeIter = financeDaoList.iterator();
+        FinanceStockDao financeDao = financeIter.next();
         boolean isEqual;
-        for (BaseStockDto baseDto : baseDtoList) {
-            // isEqual = baseDto.getCompanyName().equals(financeDto.getCompanyName());
-            isEqual = financeDto.getCompanyName().contains(baseDto.getCompanyName());
-            
-            Stock stock = Stock.builder()
-                    .companyName(baseDto.getCompanyName())
-                    .marketCategory(baseDto.getMarketCategory())
-                    .sector(baseDto.getSector())
-                    .close(baseDto.getClose())
-                    .tradingVolume(baseDto.getTradingVolume())
-                    .tradingValue(baseDto.getTradingValue())
-                    .marketCap(baseDto.getMarketCap())
-                    .eps(isEqual ? financeDto.getEps() : null)
-                    .per(isEqual ? financeDto.getPer() : null)
-                    .bps(isEqual ? financeDto.getBps() : null)
-                    .pbr(isEqual ? financeDto.getPbr() : null)
-                    .dps(isEqual ? financeDto.getDps() : null)
-                    .dy(isEqual ? financeDto.getDy() : null)
+        for (BaseStockDao baseDao : baseDaoList) {
+            // isEqual = baseDao.getCompanyName().equals(financeDao.getCompanyName());
+            isEqual = financeDao.getCompanyName().contains(baseDao.getCompanyName());
+
+            StockDao stock = StockDao.builder()
+                    .companyName(baseDao.getCompanyName())
+                    .marketCategory(baseDao.getMarketCategory())
+                    .sector(baseDao.getSector())
+                    .close(baseDao.getClose())
+                    .tradingVolume(baseDao.getTradingVolume())
+                    .tradingValue(baseDao.getTradingValue())
+                    .marketCap(baseDao.getMarketCap())
+                    .eps(isEqual ? financeDao.getEps() : null)
+                    .per(isEqual ? financeDao.getPer() : null)
+                    .bps(isEqual ? financeDao.getBps() : null)
+                    .pbr(isEqual ? financeDao.getPbr() : null)
+                    .dps(isEqual ? financeDao.getDps() : null)
+                    .dy(isEqual ? financeDao.getDy() : null)
                     .date(strDate)
                     .build();
 
@@ -78,16 +78,17 @@ public final class KrxCrawler {
             logger.info(stock.toString());
 
             if (isEqual && financeIter.hasNext())
-                financeDto = financeIter.next();
+                financeDao = financeIter.next();
         }
 
         return stockSet;
     }
 
-    private <T> List<T> crawlStocks(String date, String url, StockDtoBuilder<T> builder, int fieldCount)
+    private <T> List<T> crawlStocks(String date, String url, StockDaoBuilder<T> builder, int fieldCount)
             throws InterruptedException {
 
-        if (!isValidDate(date)) throw new IllegalArgumentException("Invalid date format: " + date);
+        if (!isValidDate(date))
+            throw new IllegalArgumentException("Invalid date format: " + date);
 
         List<T> result = new ArrayList<>();
 
@@ -97,31 +98,33 @@ public final class KrxCrawler {
 
         boolean isPossible = setDate(date);
 
-        if (!isPossible) throw new IllegalStateException("Weekend or holiday (" + date + ")");
+        if (!isPossible)
+            throw new IllegalStateException("Weekend or holiday (" + date + ")");
 
         logger.info("Finish setting date. Selected date is " + date);
         wait.until(d -> driver.findElement(By.cssSelector(".tui-grid-cell-content")));
         Thread.sleep(100);
-        
+
         logger.info("Click a submit button.");
         wait.until(ExpectedConditions.elementToBeClickable(By.className("btnSubmit"))).click();
         Thread.sleep(100);
-        
+
         logger.info("Wait until contents are loaded.");
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".loading-bar-wrap.small")));
         logger.info("Contents are loaded.");
         Thread.sleep(1000);
-        
-        logger.info("Start to crawl contents.");
+
+        logger.info("Start crawling contents.");
         WebElement scrollArea = driver.findElement(By.cssSelector(".tui-grid-body-area"));
 
         int rowKey = 0;
         boolean isScrollable = true;
-        while (true) {
+        while (isScrollable) {
             isScrollable = scroll(rowKey, scrollArea);
 
             List<WebElement> stockElements = driver
                     .findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
+
             while (stockElements.size() != 0) {
                 // logger.info(rowKey + ": " + stockElements.get(0).getText());
 
@@ -135,17 +138,17 @@ public final class KrxCrawler {
 
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
-
-            if (!isScrollable) break;
         }
+
+        logger.info("Finish crawling contents.");
 
         return result;
     }
 
-    private List<BaseStockDto> crawlBaseStock(String date) throws InterruptedException {
+    private List<BaseStockDao> crawlBaseStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF001.cmd",
-                values -> BaseStockDto.builder()
+                values -> BaseStockDao.builder()
                         .companyName(values.get(0))
                         .marketCategory(values.get(1))
                         .sector(values.get(2))
@@ -159,10 +162,10 @@ public final class KrxCrawler {
                 9);
     }
 
-    private List<FinanceStockDto> crawlFinanceStock(String date) throws InterruptedException {
+    private List<FinanceStockDao> crawlFinanceStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF002.cmd",
-                values -> FinanceStockDto.builder()
+                values -> FinanceStockDao.builder()
                         .companyName(values.get(0))
                         .close(values.get(1))
                         .change(values.get(2))
@@ -186,13 +189,12 @@ public final class KrxCrawler {
 
         while (firstKey != rowKey && tryCount < 20) {
             js.executeScript(
-                    firstKey > rowKey ? "arguments[0].scrollBy(0, -20);" : "arguments[0].scrollBy(0, 100);",
+                    firstKey > rowKey ? "arguments[0].scrollBy(0, -20);" : "arguments[0].scrollBy(0, 260);",
                     dataArea);
 
             tryCount++;
             // logger.info("scrolling... tryCount: " + tryCount);
             Thread.sleep(20);
-
             firstElement = driver.findElement(
                     By.xpath("//*[@id='jsGrid']/div/div[1]/div[1]/div[2]/div/div[1]/table/tbody/tr[1]/td"));
             firstKey = Integer.parseInt(firstElement.getAttribute("data-row-key"));
@@ -225,7 +227,8 @@ public final class KrxCrawler {
         for (WebElement dayElement : possibleDayList) {
             int possibleDay = Integer.parseInt(dayElement.getText());
 
-            if (desiredDay != possibleDay) continue;
+            if (desiredDay != possibleDay)
+                continue;
 
             dayElement.click();
             driver.findElement(By.className("CI-CAL-CONFIRM-BTN")).click();

@@ -1,17 +1,17 @@
-package krx.crawling.stocks.repository;
+package krx.crawling.model.repository;
 
 import java.util.Set;
 
 import jakarta.persistence.Query;
-import krx.crawling.stocks.entity.Stock;
+import krx.crawling.model.dao.StockDao;
 import krx.crawling.utils.JPAUtil;
 
 public class StockRepositoryImpl implements StockRepository {
     @Override
-    public int insertCrawledStocks(Set<Stock> stockSet) {
+    public int insertCrawledStocks(Set<StockDao> stockSet) {
         int count = 0;
         
-        for (Stock stock : stockSet) {
+        for (StockDao stock : stockSet) {
             JPAUtil.inTransaction(entityManager -> {
                 entityManager.persist(stock);
             });
@@ -22,29 +22,34 @@ public class StockRepositoryImpl implements StockRepository {
     }
 
     @Override
-    public int upsertCrawledStocks(Set<Stock> stockSet) {
+    public int upsertCrawledStocks(Set<StockDao> stockSet) {
         int[] totalCount = {0};
 
         JPAUtil.inTransaction(entityManager -> {
             // Define the SQL query for upsert operation
-            String sql = "INSERT INTO stock (companyName, marketCategory, sector, close, tradingVolume, tradingValue, marketCap, eps, per, bps, pbr, dps, dy, date) " +
-                         "VALUES (:companyName, :marketCategory, :sector, :close, :tradingVolume, :tradingValue, :marketCap, :eps, :per, :bps, :pbr, :dps, :dy, :date) " +
-                         "ON CONFLICT (companyName, date) DO UPDATE SET " +
-                         "marketCategory = excluded.marketCategory, " +
-                         "sector = excluded.sector, " +
-                         "close = excluded.close, " +
-                         "tradingVolume = excluded.tradingVolume, " +
-                         "tradingValue = excluded.tradingValue, " +
-                         "marketCap = excluded.marketCap, " +
-                         "eps = excluded.eps, " +
-                         "per = excluded.per, " +
-                         "bps = excluded.bps, " +
-                         "pbr = excluded.pbr, " +
-                         "dps = excluded.dps, " +
-                         "dy = excluded.dy";
+            String sql = "MERGE INTO stock AS target " +
+             "USING (VALUES (:companyName, :marketCategory, :sector, :close, :tradingVolume, :tradingValue, :marketCap, :eps, :per, :bps, :pbr, :dps, :dy, :date)) AS source " +
+             "(companyName, marketCategory, sector, close, tradingVolume, tradingValue, marketCap, eps, per, bps, pbr, dps, dy, date) " +
+             "ON target.companyName = source.companyName AND target.date = source.date " +
+             "WHEN MATCHED THEN UPDATE SET " +
+             "marketCategory = source.marketCategory, " +
+             "sector = source.sector, " +
+             "close = source.close, " +
+             "tradingVolume = source.tradingVolume, " +
+             "tradingValue = source.tradingValue, " +
+             "marketCap = source.marketCap, " +
+             "eps = source.eps, " +
+             "per = source.per, " +
+             "bps = source.bps, " +
+             "pbr = source.pbr, " +
+             "dps = source.dps, " +
+             "dy = source.dy " +
+             "WHEN NOT MATCHED THEN INSERT (companyName, marketCategory, sector, close, tradingVolume, tradingValue, marketCap, eps, per, bps, pbr, dps, dy, date) " +
+             "VALUES (source.companyName, source.marketCategory, source.sector, source.close, source.tradingVolume, source.tradingValue, source.marketCap, source.eps, source.per, source.bps, source.pbr, source.dps, source.dy, source.date)";
+
     
             // Loop through the stock set and execute the query for each stock
-            for (Stock stock : stockSet) {
+            for (StockDao stock : stockSet) {
                 Query query = entityManager.createNativeQuery(sql);
                 
                 query.setParameter("companyName", stock.getCompanyName());

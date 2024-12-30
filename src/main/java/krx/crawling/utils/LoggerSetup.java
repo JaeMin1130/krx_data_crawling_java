@@ -36,6 +36,11 @@ public class LoggerSetup {
             // Add custom FileHandler with date-based filename
             String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             FileHandler fileHandler = new FileHandler(logDir + "krx_" + date + ".log", true);
+
+            // Set the encoding to EUC-KR
+            fileHandler.setEncoding("UTF-8");
+
+            // Set a custom formatter
             fileHandler.setFormatter(new CustomFormatter());
             rootLogger.addHandler(fileHandler);
 
@@ -43,9 +48,12 @@ public class LoggerSetup {
             ConsoleHandler consoleHandler = new ConsoleHandler();
             consoleHandler.setFormatter(new CustomFormatter());
             rootLogger.addHandler(consoleHandler);
-            
+
         } catch (IOException e) {
             System.err.println("Could not configure logging.");
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            System.err.println("Security exception occurred while configuring logging.");
             e.printStackTrace();
         }
     }

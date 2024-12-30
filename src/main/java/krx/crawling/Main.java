@@ -20,9 +20,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
-import krx.crawling.stocks.entity.Stock;
-import krx.crawling.stocks.repository.StockRepository;
-import krx.crawling.stocks.repository.StockRepositoryImpl;
+import krx.crawling.model.dao.StockDao;
+import krx.crawling.model.repository.StockRepository;
+import krx.crawling.model.repository.StockRepositoryImpl;
 import krx.crawling.utils.KrxCrawler;
 import krx.crawling.utils.LoggerSetup;
 
@@ -65,7 +65,7 @@ public class Main {
                         saveData(input);
                         logger.info("Finish the liveJob.");
                     } catch (NumberFormatException e) {
-                        logger.warning("Some inputs you entered are not a number!! Enter a input of a nuber format!!");
+                        logger.warning("Some inputs you entered are not a number!! Enter them as a number format!!");
                         continue;
                     } catch (IllegalStateException e) {
                         logger.warning(e.getMessage());
@@ -106,9 +106,6 @@ public class Main {
         options.addArguments("--no-sandbox");
 
         try (ClosableWebDriver closableDriver = new ClosableWebDriver(new FirefoxDriver(options))) {
-            WebDriver driver = closableDriver.getWebDriver();
-            logger.info("Firefox driver is up and running.");
-
             int curYear = LocalDate.now().getYear();
             int year = args.length == 0 ? curYear : Integer.parseInt(args[0]);
             if (year < curYear - 4 || year > curYear + 4)
@@ -122,9 +119,13 @@ public class Main {
             int idx = 0;
             LocalDate insertedDate = LocalDate.of(year, month, day);
 
+            WebDriver driver = closableDriver.getWebDriver();
+            logger.info("Firefox driver is up and running.");
+
+
             KrxCrawler krxCrawler = new KrxCrawler(driver);
             StockRepository stockRepo = new StockRepositoryImpl();
-            Set<Stock> stockSet = new TreeSet<>();
+            Set<StockDao> stockSet = new TreeSet<>();
 
             while (count < numOfDays) {
                 LocalDate selectedDate = insertedDate.plusDays(idx--);
@@ -142,10 +143,10 @@ public class Main {
                     break;
                 }
 
-                logger.info(String.format("Start UPSERT, date: %s", selectedDate));
-                // int totalCount = stockRepo.upsertCrawledStocks(stockSet);
-                int totalCount = stockRepo.insertCrawledStocks(stockSet);
-                logger.info(String.format("Finish INSERT, totalCount: %s", totalCount));
+                logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Start UPSERT, date: %s", selectedDate));
+                int totalCount = stockRepo.upsertCrawledStocks(stockSet);
+                // int totalCount = stockRepo.insertCrawledStocks(stockSet);
+                logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Finish UPSERT, totalCount: %s", totalCount));
 
                 count++;
             }

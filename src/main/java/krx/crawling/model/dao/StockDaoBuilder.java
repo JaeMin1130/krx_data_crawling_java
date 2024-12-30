@@ -1,9 +1,9 @@
-package krx.crawling.stocks.dto;
+package krx.crawling.model.dao;
 
 import java.util.List;
 
 @FunctionalInterface
-public interface StockDtoBuilder<T> {
+public interface StockDaoBuilder<T> {
     T build(List<String> values);
 }
 

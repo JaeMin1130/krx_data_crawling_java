@@ -1,4 +1,4 @@
-package krx.crawling.stocks.entity;
+package krx.crawling.model.dao;
 
 
 import jakarta.persistence.Column;
@@ -21,7 +21,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Entity
 @Table(name = "stock", uniqueConstraints = @UniqueConstraint(columnNames = {"companyName", "date"}))
-public class Stock implements Comparable<Stock> {
+public class StockDao implements Comparable<StockDao> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -45,7 +45,7 @@ public class Stock implements Comparable<Stock> {
     private String date;
 
     @Override
-    public int compareTo(Stock o) {
+    public int compareTo(StockDao o) {
         return String.CASE_INSENSITIVE_ORDER.compare(this.companyName, o.companyName);
     }
 }
