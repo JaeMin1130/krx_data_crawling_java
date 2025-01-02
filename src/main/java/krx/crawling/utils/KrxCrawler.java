@@ -24,6 +24,8 @@ import krx.crawling.model.dao.BaseStockDao;
 import krx.crawling.model.dao.FinanceStockDao;
 import krx.crawling.model.dao.StockDao;
 import krx.crawling.model.dao.StockDaoBuilder;
+import krx.crawling.model.entity.Stock;
+import krx.crawling.model.entity.StockBuilderUtil;
 
 public final class KrxCrawler {
     private static final Logger logger = Logger.getLogger(KrxCrawler.class.getName());
@@ -35,7 +37,7 @@ public final class KrxCrawler {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
-    public Set<StockDao> execute(LocalDate date) throws InterruptedException {
+    public Set<Stock> execute(LocalDate date) throws InterruptedException {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         List<BaseStockDao> baseDaoList = crawlBaseStock(strDate);
@@ -47,7 +49,7 @@ public final class KrxCrawler {
         logger.info("base: " + baseDaoList.size());
         logger.info("finance: " + financeDaoList.size());
 
-        Set<StockDao> stockSet = new TreeSet<>();
+        Set<Stock> stockSet = new TreeSet<>();
 
         Iterator<FinanceStockDao> financeIter = financeDaoList.iterator();
         FinanceStockDao financeDao = financeIter.next();
@@ -56,7 +58,7 @@ public final class KrxCrawler {
             // isEqual = baseDao.getCompanyName().equals(financeDao.getCompanyName());
             isEqual = financeDao.getCompanyName().contains(baseDao.getCompanyName());
 
-            StockDao stock = StockDao.builder()
+            StockDao stockDao = StockDao.builder()
                     .companyName(baseDao.getCompanyName())
                     .marketCategory(baseDao.getMarketCategory())
                     .sector(baseDao.getSector())
@@ -71,6 +73,23 @@ public final class KrxCrawler {
                     .dps(isEqual ? financeDao.getDps() : null)
                     .dy(isEqual ? financeDao.getDy() : null)
                     .date(strDate)
+                    .build();
+
+            Stock stock = Stock.builder()
+                    .companyName(stockDao.getCompanyName())
+                    .marketCategory(stockDao.getMarketCategory())
+                    .sector(stockDao.getSector())
+                    .close(StockBuilderUtil.parseInteger(stockDao.getClose()))
+                    .tradingVolume(StockBuilderUtil.parseLong(stockDao.getTradingVolume()))
+                    .tradingValue(StockBuilderUtil.parseLong(stockDao.getTradingValue()))
+                    .marketCap(StockBuilderUtil.parseLong(stockDao.getMarketCap()))
+                    .eps(StockBuilderUtil.parseInteger(stockDao.getEps()))
+                    .bps(StockBuilderUtil.parseInteger(stockDao.getBps()))
+                    .dps(StockBuilderUtil.parseInteger(stockDao.getDps()))
+                    // .per(StockBuilderUtil.parseDouble(stockDao.getPer()))
+                    // .pbr(StockBuilderUtil.parseDouble(stockDao.getPbr()))
+                    // .dy(StockBuilderUtil.parseDouble(stockDao.getDy()))
+                    .date(LocalDate.parse(strDate))
                     .build();
 
             stockSet.add(stock);
@@ -138,6 +157,7 @@ public final class KrxCrawler {
 
                 stockElements = driver.findElements(By.cssSelector(String.format("[data-row-key='%d']", ++rowKey)));
             }
+
         }
 
         logger.info("Finish crawling contents.");

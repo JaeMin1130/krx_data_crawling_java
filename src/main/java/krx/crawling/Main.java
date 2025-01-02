@@ -20,7 +20,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
-import krx.crawling.model.dao.StockDao;
+import krx.crawling.model.entity.Stock;
 import krx.crawling.model.repository.StockRepository;
 import krx.crawling.model.repository.StockRepositoryImpl;
 import krx.crawling.utils.KrxCrawler;
@@ -88,7 +88,7 @@ public class Main {
         long initialDelay = Date.from(todayAt16.toInstant()).getTime() - System.currentTimeMillis();
 
         logger.info(String.format("A batchJob will be executed at %s for the first time.", todayAt16));
-        // scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
 
         // Schedule a task to reconfigure the logger at midnight every day
         ZonedDateTime tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
@@ -125,7 +125,7 @@ public class Main {
 
             KrxCrawler krxCrawler = new KrxCrawler(driver);
             StockRepository stockRepo = new StockRepositoryImpl();
-            Set<StockDao> stockSet = new TreeSet<>();
+            Set<Stock> stockSet = new TreeSet<>();
 
             while (count < numOfDays) {
                 LocalDate selectedDate = insertedDate.plusDays(idx--);
