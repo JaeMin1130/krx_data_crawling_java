@@ -41,12 +41,12 @@ public class LoggerSetup {
             fileHandler.setEncoding("UTF-8");
 
             // Set a custom formatter
-            fileHandler.setFormatter(new CustomFormatter());
+            fileHandler.setFormatter(new CustomLogFormatter());
             rootLogger.addHandler(fileHandler);
 
             // Add ConsoleHandler
             ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setFormatter(new CustomFormatter());
+            consoleHandler.setFormatter(new CustomLogFormatter());
             rootLogger.addHandler(consoleHandler);
 
         } catch (IOException e) {

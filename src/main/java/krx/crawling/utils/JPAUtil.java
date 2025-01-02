@@ -9,9 +9,6 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 
 public class JPAUtil {
-    // an EntityManagerFactory is set up once for an application
-    // IMPORTANT: notice how the name here matches the name we
-    // gave the persistence-unit in persistence.xml
     private static final EntityManagerFactory entityManagerFactory = createEntityManagerFactory("org.hibernate.stock.jpa");
 
     public static void inTransaction(Consumer<EntityManager> work) {

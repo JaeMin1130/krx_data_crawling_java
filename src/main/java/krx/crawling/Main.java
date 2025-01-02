@@ -157,7 +157,7 @@ public class Main {
         logger.info("Firefox driver is closed.");
     }
 
-    static class ClosableWebDriver implements AutoCloseable {
+    private static class ClosableWebDriver implements AutoCloseable {
         private final WebDriver webDriver;
 
         public ClosableWebDriver(WebDriver webDriver) {
