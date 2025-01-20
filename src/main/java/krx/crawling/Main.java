@@ -20,11 +20,10 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
+import krx.crawling.log.LoggerSetup;
 import krx.crawling.model.entity.Stock;
-import krx.crawling.model.repository.StockRepository;
-import krx.crawling.model.repository.StockRepositoryImpl;
-import krx.crawling.utils.KrxCrawler;
-import krx.crawling.utils.LoggerSetup;
+import krx.crawling.repository.RepositoryService;
+import krx.crawling.service.KrxCrawler;
 
 public class Main {
 
@@ -81,21 +80,25 @@ public class Main {
             }
         };
 
-        // Schedule the batchJob to run at 16:00 every day
+        // 배치: open(09:30), close(16:00)
         long oneDay = 24 * 60 * 60 * 1000;
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
-        ZonedDateTime todayAt16 = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
-        long initialDelay = Date.from(todayAt16.toInstant()).getTime() - System.currentTimeMillis();
+        ZonedDateTime market_open = now.plusDays(0).withHour(9).withMinute(30).withSecond(0).withNano(0);
+        ZonedDateTime market_close = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
+        long openDelay = Date.from(market_open.toInstant()).getTime() - System.currentTimeMillis();
+        long closeDelay = Date.from(market_close.toInstant()).getTime() - System.currentTimeMillis();
 
-        logger.info(String.format("A batchJob will be executed at %s for the first time.", todayAt16));
-        scheduler.scheduleAtFixedRate(batchJob, initialDelay, oneDay, TimeUnit.MILLISECONDS);
-
-        // Schedule a task to reconfigure the logger at midnight every day
+        logger.info(String.format("A batchJob will be executed at %s after market opened.", market_open));
+        // scheduler.scheduleAtFixedRate(batchJob, openDelay, oneDay, TimeUnit.MILLISECONDS);
+        logger.info(String.format("A batchJob will be executed at %s after market closed.", market_close));
+        scheduler.scheduleAtFixedRate(batchJob, closeDelay, oneDay, TimeUnit.MILLISECONDS);
+        
+        // 배치: 로그 작업
         ZonedDateTime tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         long midnightDelay = Date.from(tomorrowMidnight.toInstant()).getTime() - System.currentTimeMillis();
         scheduler.scheduleAtFixedRate(LoggerSetup::getLogger, midnightDelay, oneDay, TimeUnit.MILLISECONDS);
 
-        // Run the liveJob in the foreground
+        // 실시간 작업
         Thread liveJobThread = new Thread(liveJob);
         liveJobThread.start();
     }
@@ -124,7 +127,7 @@ public class Main {
 
 
             KrxCrawler krxCrawler = new KrxCrawler(driver);
-            StockRepository stockRepo = new StockRepositoryImpl();
+            RepositoryService repositoryService = new RepositoryService();
             Set<Stock> stockSet = new TreeSet<>();
 
             while (count < numOfDays) {
@@ -144,10 +147,12 @@ public class Main {
                 }
 
                 logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Start UPSERT, date: %s", selectedDate));
-                int totalCount = stockRepo.upsertCrawledStocks(stockSet);
-                // int totalCount = stockRepo.insertCrawledStocks(stockSet);
+                int totalCount = repositoryService.upsertCrawledStocks(stockSet);
                 logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Finish UPSERT, totalCount: %s", totalCount));
-
+                
+                logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Start UPSERT, date: %s", selectedDate));
+                repositoryService.upsertIndicator();
+                logger.info(String.format("[%s]", LocalDateTime.now()) + String.format("Finish UPSERT indicator."));
                 count++;
             }
 

@@ -7,7 +7,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-public class FinanceStockDao {
+public class FinanceStockDto {
     private String companyName;
     private String close;
     private String change;

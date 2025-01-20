@@ -1,4 +1,4 @@
-package krx.crawling.utils;
+package krx.crawling.log;
 
 import java.io.File;
 import java.io.IOException;

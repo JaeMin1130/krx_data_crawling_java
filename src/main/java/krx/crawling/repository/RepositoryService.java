@@ -1,13 +1,11 @@
-package krx.crawling.model.repository;
+package krx.crawling.repository;
 
 import java.util.Set;
 
 import jakarta.persistence.Query;
 import krx.crawling.model.entity.Stock;
-import krx.crawling.utils.JPAUtil;
 
-public class StockRepositoryImpl implements StockRepository {
-    @Override
+public class RepositoryService {
     public int insertCrawledStocks(Set<Stock> stockSet) {
         int count = 0;
 
@@ -21,7 +19,6 @@ public class StockRepositoryImpl implements StockRepository {
         return count;
     }
 
-    @Override
     public int upsertCrawledStocks(Set<Stock> stockSet) {
         int[] totalCount = { 0 };
 
@@ -68,6 +65,32 @@ public class StockRepositoryImpl implements StockRepository {
         });
 
         return totalCount[0];
+    }
+
+    public void upsertIndicator() {
+        JPAUtil.inTransaction(entityManager -> {
+            String sql = "MERGE INTO indicator AS target\r\n" + //
+                    "\tUSING (SELECT * FROM indicator_value) AS source (companyname, sma5, sma20, sma60, per, pbr, dy, date)\r\n"
+                    + //
+                    "\t\tON (target.companyname = source.companyname)\r\n" + //
+                    "\t\t\tWHEN MATCHED THEN\r\n" + //
+                    "\t\t\t    UPDATE SET\r\n" + //
+                    "\t\t\t        target.sma5 = source.sma5,\r\n" + //
+                    "\t\t\t        target.sma20 = source.sma20,\r\n" + //
+                    "\t\t\t        target.sma60 = source.sma60,\r\n" + //
+                    "\t\t\t        target.per = source.per,\r\n" + //
+                    "\t\t\t        target.pbr = source.pbr,\r\n" + //
+                    "\t\t\t        target.dy = source.dy,\r\n" + //
+                    "\t\t\t        target.date = source.date\r\n" + //
+                    "\t\t\tWHEN NOT MATCHED THEN \r\n" + //
+                    "\t\t\t    INSERT (companyname, sma5, sma20, sma60, per, pbr, dy, date)\r\n" + //
+                    "\t\t\t    VALUES (source.companyname, source.sma5, source.sma20, source.sma60, source.per, source.pbr, source.dy, source.date)";
+
+            // Loop through the stock set and execute the query for each stock
+            Query query = entityManager.createNativeQuery(sql);
+
+            query.executeUpdate();
+        });
     }
 
 }

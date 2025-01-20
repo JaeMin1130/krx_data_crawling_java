@@ -1,4 +1,4 @@
-package krx.crawling.utils;
+package krx.crawling.repository;
 
 import static jakarta.persistence.Persistence.createEntityManagerFactory;
 

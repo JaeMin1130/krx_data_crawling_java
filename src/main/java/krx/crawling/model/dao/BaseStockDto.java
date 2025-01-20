@@ -7,7 +7,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-public class BaseStockDao {
+public class BaseStockDto {
     private String companyName;
     private String marketCategory;
     private String sector;

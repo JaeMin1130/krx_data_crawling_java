@@ -1,4 +1,4 @@
-package krx.crawling.utils;
+package krx.crawling.service;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -20,8 +20,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import krx.crawling.model.dao.BaseStockDao;
-import krx.crawling.model.dao.FinanceStockDao;
+import krx.crawling.model.dao.BaseStockDto;
+import krx.crawling.model.dao.FinanceStockDto;
 import krx.crawling.model.dao.StockDao;
 import krx.crawling.model.dao.StockDaoBuilder;
 import krx.crawling.model.entity.Stock;
@@ -40,10 +40,10 @@ public final class KrxCrawler {
     public Set<Stock> execute(LocalDate date) throws InterruptedException {
         String strDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        List<BaseStockDao> baseDaoList = crawlBaseStock(strDate);
+        List<BaseStockDto> baseDaoList = crawlBaseStock(strDate);
         logger.info("--------------Finish base data crawling--------------");
 
-        List<FinanceStockDao> financeDaoList = crawlFinanceStock(strDate);
+        List<FinanceStockDto> financeDaoList = crawlFinanceStock(strDate);
         logger.info("--------------Finish finance data crawling--------------");
 
         logger.info("base: " + baseDaoList.size());
@@ -51,10 +51,10 @@ public final class KrxCrawler {
 
         Set<Stock> stockSet = new TreeSet<>();
 
-        Iterator<FinanceStockDao> financeIter = financeDaoList.iterator();
-        FinanceStockDao financeDao = financeIter.next();
+        Iterator<FinanceStockDto> financeIter = financeDaoList.iterator();
+        FinanceStockDto financeDao = financeIter.next();
         boolean isEqual;
-        for (BaseStockDao baseDao : baseDaoList) {
+        for (BaseStockDto baseDao : baseDaoList) {
             // isEqual = baseDao.getCompanyName().equals(financeDao.getCompanyName());
             isEqual = financeDao.getCompanyName().contains(baseDao.getCompanyName());
 
@@ -165,10 +165,10 @@ public final class KrxCrawler {
         return result;
     }
 
-    private List<BaseStockDao> crawlBaseStock(String date) throws InterruptedException {
+    private List<BaseStockDto> crawlBaseStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF001.cmd",
-                values -> BaseStockDao.builder()
+                values -> BaseStockDto.builder()
                         .companyName(values.get(0))
                         .marketCategory(values.get(1))
                         .sector(values.get(2))
@@ -182,10 +182,10 @@ public final class KrxCrawler {
                 9);
     }
 
-    private List<FinanceStockDao> crawlFinanceStock(String date) throws InterruptedException {
+    private List<FinanceStockDto> crawlFinanceStock(String date) throws InterruptedException {
         return crawlStocks(date,
                 "http://data.krx.co.kr/contents/MMC/ISIF/isif/MMCISIF002.cmd",
-                values -> FinanceStockDao.builder()
+                values -> FinanceStockDto.builder()
                         .companyName(values.get(0))
                         .close(values.get(1))
                         .change(values.get(2))
