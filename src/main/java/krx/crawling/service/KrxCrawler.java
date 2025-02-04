@@ -140,7 +140,6 @@ public final class KrxCrawler {
         boolean isScrollable = true;
         while (isScrollable) {
             isScrollable = scroll(rowKey, scrollArea);
-
             List<WebElement> stockElements = driver
                     .findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
 
