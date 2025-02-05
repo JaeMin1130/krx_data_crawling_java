@@ -13,11 +13,6 @@ public class LoggerSetup {
     private static final Logger logger = Logger.getLogger(LoggerSetup.class.getName());
 
     public static Logger getLogger() {
-        setupLogger();
-        return logger;
-    }
-
-    private static void setupLogger() {
         try {
             // Remove default handlers
             Logger rootLogger = Logger.getLogger("");
@@ -27,7 +22,7 @@ public class LoggerSetup {
             }
 
             // Create log directory if it doesn't exist
-            String logDir = "./volume/logs/";
+            String logDir = "./logs/";
             File directory = new File(logDir);
             if (!directory.exists()) {
                 directory.mkdirs();
@@ -56,5 +51,6 @@ public class LoggerSetup {
             System.err.println("Security exception occurred while configuring logging.");
             e.printStackTrace();
         }
+        return logger;
     }
 }

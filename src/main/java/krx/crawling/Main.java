@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
@@ -82,22 +81,17 @@ public class Main {
 
         // 배치: open(09:30), close(16:00)
         long oneDay = 24 * 60 * 60 * 1000;
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
-
-        ZonedDateTime market_open = now.plusDays(0).withHour(9).withMinute(33).withSecond(0).withNano(0);
-        logger.info(String.format("A batchJob will be executed at %s after market opened.", market_open));
-        long openDelay = Date.from(market_open.toInstant()).getTime() - System.currentTimeMillis();
-        scheduler.scheduleAtFixedRate(batchJob, openDelay, oneDay, TimeUnit.MILLISECONDS);
-
-        ZonedDateTime market_close = now.plusDays(0).withHour(16).withMinute(0).withSecond(0).withNano(0);
-        logger.info(String.format("A batchJob will be executed at %s after market closed.", market_close));
-        long closeDelay = Date.from(market_close.toInstant()).getTime() - System.currentTimeMillis();
-        scheduler.scheduleAtFixedRate(batchJob, closeDelay, oneDay, TimeUnit.MILLISECONDS);
+        logger.info(String.format("A batchJob will be executed at 09:30 after market opened."));
+        long openDelay = calculateInitialDelay(9, 30);
+        scheduler.scheduleAtFixedRate(batchJob, openDelay, oneDay, TimeUnit.SECONDS);
+        
+        logger.info(String.format("A batchJob will be executed at 16:00 after market closed."));
+        long closeDelay = calculateInitialDelay(16, 0);
+        scheduler.scheduleAtFixedRate(batchJob, closeDelay, oneDay, TimeUnit.SECONDS);
 
         // 배치: 로그 작업
-        ZonedDateTime tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        long midnightDelay = Date.from(tomorrowMidnight.toInstant()).getTime() - System.currentTimeMillis();
-        scheduler.scheduleAtFixedRate(LoggerSetup::getLogger, midnightDelay, oneDay, TimeUnit.MILLISECONDS);
+        long logDelay = calculateInitialDelay(17, 0);
+        scheduler.scheduleAtFixedRate(LoggerSetup::getLogger, logDelay, oneDay, TimeUnit.SECONDS);
 
         // 실시간 작업
         Thread liveJobThread = new Thread(liveJob);
@@ -181,5 +175,20 @@ public class Main {
                 webDriver.quit();
             }
         }
+    }
+
+    // 지정 시간과 현재 시간의 차이(초 단위)
+    private static long calculateInitialDelay(int targetHour, int targetMinute) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nextRun = now.withHour(targetHour).withMinute(targetMinute).withSecond(0).withNano(0);
+
+        if (now.isAfter(nextRun)) {
+            nextRun = nextRun.plusDays(1);
+        }
+
+        ZonedDateTime nowZoned = ZonedDateTime.of(now, ZoneId.systemDefault());
+        ZonedDateTime nextRunZoned = ZonedDateTime.of(nextRun, ZoneId.systemDefault());
+        return TimeUnit.MILLISECONDS
+                .toSeconds(nextRunZoned.toInstant().toEpochMilli() - nowZoned.toInstant().toEpochMilli());
     }
 }
