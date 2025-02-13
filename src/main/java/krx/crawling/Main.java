@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.Set;
@@ -32,13 +33,14 @@ public class Main {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
         Runnable batchJob = () -> {
+            var startTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
             logger.info("Running a batchJob...");
-            logger.info("Current time is " + LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+            logger.info("Current time is " + startTime);
 
             saveData(new String[] {});
 
             logger.info("Finish the batchJob.");
-            logger.info(String.format("The next batchJob will be executed %s at 16:00.", LocalDate.now().plusDays(1)));
+            logger.info(String.format("The next batchJob will be executed tomorrow %s.", startTime));
         };
 
         Runnable liveJob = () -> {
@@ -63,13 +65,13 @@ public class Main {
                         saveData(input);
                         logger.info("Finish the liveJob.");
                     } catch (NumberFormatException e) {
-                        logger.warning("Some inputs you entered are not a number!! Enter them as a number format!!");
+                        logger.severe("Some inputs you entered are not a number!! Enter them as a number format!!");
                         continue;
                     } catch (IllegalStateException e) {
-                        logger.warning(e.getMessage());
+                        logger.severe(e.getMessage());
                         continue;
                     } catch (DateTimeException e) {
-                        logger.warning(e.getMessage());
+                        logger.severe(e.getMessage());
                         continue;
                     } catch (Exception e) {
                         logger.severe(e.getMessage());
@@ -90,9 +92,8 @@ public class Main {
         scheduler.scheduleAtFixedRate(batchJob, closeDelay, oneDay, TimeUnit.SECONDS);
 
         // 배치: 로그 작업
-        long logDelay = calculateInitialDelay(17, 0);
-        scheduler.scheduleAtFixedRate(LoggerSetup::getLogger, logDelay, oneDay, TimeUnit.SECONDS);
-
+        long logDelay = calculateInitialDelay(0, 0);
+        scheduler.scheduleAtFixedRate(LoggerSetup::setLogger, logDelay, oneDay, TimeUnit.SECONDS);
         // 실시간 작업
         Thread liveJobThread = new Thread(liveJob);
         liveJobThread.start();

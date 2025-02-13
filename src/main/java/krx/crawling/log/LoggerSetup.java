@@ -1,56 +1,52 @@
 package krx.crawling.log;
 
-import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.logging.ConsoleHandler;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.FileHandler;
-import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LoggerSetup {
-    private static final Logger logger = Logger.getLogger(LoggerSetup.class.getName());
+    private static Logger LOGGER = Logger.getLogger(LoggerSetup.class.getName());
+    private static boolean isInitialized = false;
 
     public static Logger getLogger() {
+        if (!isInitialized) {
+            setLogger();
+            isInitialized = true;
+        }
+        return LOGGER;
+    }
+    public static Logger setLogger() {
         try {
-            // Remove default handlers
-            Logger rootLogger = Logger.getLogger("");
-            Handler[] handlers = rootLogger.getHandlers();
-            for (Handler handler : handlers) {
-                rootLogger.removeHandler(handler);
+            String logDir = "logs";
+            String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            String logFileName = logDir + "/krx_" + date + ".log";
+
+            // Create the logs directory if it doesn't exist
+            Path logPath = Paths.get(logDir);
+            if (Files.notExists(logPath)) {
+                Files.createDirectories(logPath);
             }
 
-            // Create log directory if it doesn't exist
-            String logDir = "./logs/";
-            File directory = new File(logDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            // Add custom FileHandler with date-based filename
-            String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            FileHandler fileHandler = new FileHandler(logDir + "krx_" + date + ".log", true);
-
-            // Set the encoding to EUC-KR
+            // Set up the FileHandler
+            FileHandler fileHandler = new FileHandler(logFileName, true);
+            fileHandler.setFormatter(new CustomLogFormatter());
             fileHandler.setEncoding("UTF-8");
 
-            // Set a custom formatter
-            fileHandler.setFormatter(new CustomLogFormatter());
-            rootLogger.addHandler(fileHandler);
-
-            // Add ConsoleHandler
-            ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setFormatter(new CustomLogFormatter());
-            rootLogger.addHandler(consoleHandler);
+            // Configure logger
+            LOGGER.setLevel(Level.INFO);
+            LOGGER.addHandler(fileHandler);
+            LOGGER.setUseParentHandlers(false); // Disable console logging
 
         } catch (IOException e) {
-            System.err.println("Could not configure logging.");
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            System.err.println("Security exception occurred while configuring logging.");
             e.printStackTrace();
         }
-        return logger;
+
+        return LOGGER;
     }
 }

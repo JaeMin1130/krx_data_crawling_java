@@ -1,8 +1,5 @@
 package krx.crawling.log;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -17,4 +14,3 @@ public class CustomLogFormatter extends Formatter {
         return sb.toString();
     }
 }
-

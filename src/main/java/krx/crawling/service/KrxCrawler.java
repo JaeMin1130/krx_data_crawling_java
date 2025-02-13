@@ -20,6 +20,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import krx.crawling.log.LoggerSetup;
 import krx.crawling.model.dao.BaseStockDto;
 import krx.crawling.model.dao.FinanceStockDto;
 import krx.crawling.model.dao.StockDao;
@@ -28,7 +29,7 @@ import krx.crawling.model.entity.Stock;
 import krx.crawling.model.entity.StockBuilderUtil;
 
 public final class KrxCrawler {
-    private static final Logger logger = Logger.getLogger(KrxCrawler.class.getName());
+    private static final Logger logger = LoggerSetup.getLogger();
     private WebDriver driver;
     private WebDriverWait wait;
 
