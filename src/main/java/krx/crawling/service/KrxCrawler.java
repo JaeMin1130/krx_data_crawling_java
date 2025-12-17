@@ -21,10 +21,10 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import krx.crawling.log.LoggerSetup;
-import krx.crawling.model.dao.BaseStockDto;
-import krx.crawling.model.dao.FinanceStockDto;
 import krx.crawling.model.dao.StockDao;
 import krx.crawling.model.dao.StockDaoBuilder;
+import krx.crawling.model.dto.BaseStockDto;
+import krx.crawling.model.dto.FinanceStockDto;
 import krx.crawling.model.entity.Stock;
 import krx.crawling.model.entity.StockBuilderUtil;
 
@@ -140,7 +140,8 @@ public final class KrxCrawler {
         int rowKey = 0;
         boolean isScrollable = true;
         while (isScrollable) {
-            isScrollable = scroll(rowKey, scrollArea);
+            isScrollable = false;
+            // isScrollable = scroll(rowKey, scrollArea);
             List<WebElement> stockElements = driver
                     .findElements(By.cssSelector(String.format("[data-row-key=\"%d\"]", rowKey)));
 

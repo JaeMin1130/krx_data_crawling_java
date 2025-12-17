@@ -1,4 +1,4 @@
-package krx.crawling.model.dao;
+package krx.crawling.model.dto;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -7,15 +7,14 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-public class FinanceStockDto {
+public class BaseStockDto {
     private String companyName;
+    private String marketCategory;
+    private String sector;
     private String close;
     private String change;
     private String fluctuationRate;
-    private String eps;
-    private String per;
-    private String bps;
-    private String pbr;
-    private String dps;
-    private String dy;
+    private String tradingVolume;
+    private String tradingValue;
+    private String marketCap;
 }
