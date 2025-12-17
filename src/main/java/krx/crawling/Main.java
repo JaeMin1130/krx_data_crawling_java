@@ -40,7 +40,7 @@ public class Main {
             saveData(new String[] {});
 
             logger.info("Finish the batchJob.");
-            logger.info(String.format("The next batchJob will be executed tomorrow %s.", startTime));
+            logger.info(String.format("The next batchJob will be executed tomorrow."));
         };
 
         Runnable liveJob = () -> {
@@ -86,7 +86,7 @@ public class Main {
         logger.info(String.format("A batchJob will be executed at 09:30 after market opened."));
         long openDelay = calculateInitialDelay(9, 30);
         scheduler.scheduleAtFixedRate(batchJob, openDelay, oneDay, TimeUnit.SECONDS);
-        
+
         logger.info(String.format("A batchJob will be executed at 16:00 after market closed."));
         long closeDelay = calculateInitialDelay(16, 0);
         scheduler.scheduleAtFixedRate(batchJob, closeDelay, oneDay, TimeUnit.SECONDS);
