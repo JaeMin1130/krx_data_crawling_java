@@ -21,7 +21,6 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import krx.crawling.log.LoggerSetup;
-import krx.crawling.model.dao.StockDao;
 import krx.crawling.model.dao.StockDaoBuilder;
 import krx.crawling.model.dto.BaseStockDto;
 import krx.crawling.model.dto.FinanceStockDto;
@@ -59,37 +58,17 @@ public final class KrxCrawler {
             // isEqual = baseDao.getCompanyName().equals(financeDao.getCompanyName());
             isEqual = financeDao.getCompanyName().contains(baseDao.getCompanyName());
 
-            StockDao stockDao = StockDao.builder()
+            Stock stock = Stock.builder()
                     .companyName(baseDao.getCompanyName())
                     .marketCategory(baseDao.getMarketCategory())
                     .sector(baseDao.getSector())
-                    .close(baseDao.getClose())
-                    .tradingVolume(baseDao.getTradingVolume())
-                    .tradingValue(baseDao.getTradingValue())
-                    .marketCap(baseDao.getMarketCap())
-                    .eps(isEqual ? financeDao.getEps() : null)
-                    .per(isEqual ? financeDao.getPer() : null)
-                    .bps(isEqual ? financeDao.getBps() : null)
-                    .pbr(isEqual ? financeDao.getPbr() : null)
-                    .dps(isEqual ? financeDao.getDps() : null)
-                    .dy(isEqual ? financeDao.getDy() : null)
-                    .date(strDate)
-                    .build();
-
-            Stock stock = Stock.builder()
-                    .companyName(stockDao.getCompanyName())
-                    .marketCategory(stockDao.getMarketCategory())
-                    .sector(stockDao.getSector())
-                    .close(StockBuilderUtil.parseInteger(stockDao.getClose()))
-                    .tradingVolume(StockBuilderUtil.parseLong(stockDao.getTradingVolume()))
-                    .tradingValue(StockBuilderUtil.parseLong(stockDao.getTradingValue()))
-                    .marketCap(StockBuilderUtil.parseLong(stockDao.getMarketCap()))
-                    .eps(StockBuilderUtil.parseInteger(stockDao.getEps()))
-                    .bps(StockBuilderUtil.parseInteger(stockDao.getBps()))
-                    .dps(StockBuilderUtil.parseInteger(stockDao.getDps()))
-                    // .per(StockBuilderUtil.parseDouble(stockDao.getPer()))
-                    // .pbr(StockBuilderUtil.parseDouble(stockDao.getPbr()))
-                    // .dy(StockBuilderUtil.parseDouble(stockDao.getDy()))
+                    .close(StockBuilderUtil.parseInteger(baseDao.getClose()))
+                    .tradingVolume(StockBuilderUtil.parseLong(baseDao.getTradingVolume()))
+                    .tradingValue(StockBuilderUtil.parseLong(baseDao.getTradingValue()))
+                    .marketCap(StockBuilderUtil.parseLong(baseDao.getMarketCap()))
+                    .eps(isEqual ? StockBuilderUtil.parseInteger(financeDao.getEps()) : null)
+                    .bps(isEqual ? StockBuilderUtil.parseInteger(financeDao.getBps()) : null)
+                    .dps(isEqual ? StockBuilderUtil.parseInteger(financeDao.getDps()) : null)
                     .date(LocalDate.parse(strDate))
                     .build();
 
